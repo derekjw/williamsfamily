@@ -22,12 +22,12 @@ import se.scalablesolutions.akka.actor.ActorRegistry
 class HelloWorld {
   lazy val photos = ActorRegistry.actorsFor[PhotoService].head
 
-def updateHash =
-  JqAjax(url = "/location", data = Stringify(JsObj("anchor" -> JsVar("window", "location", "hash"))))
+  def updateFragment =
+    JqAjax(url = "/location", data = Stringify(JsObj("fragment" -> JsVar("window", "location", "hash"))))
 
   def tester(in: NodeSeq): NodeSeq =
     Script(OnLoad(
-      Jq(JsVar("window")) ~> JqBind("hashchange", AnonFunc(updateHash)) &
+      Jq(JsVar("window")) ~> JqBind("hashchange", AnonFunc(updateFragment)) &
       Jq(JsVar("window")) ~> JqTrigger("hashchange")
     ))
 
