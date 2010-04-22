@@ -42,7 +42,7 @@ object LocationHandler {
 }
 
 class LocationLink(val path: List[String], val params: SortedMap[String,SortedSet[String]] = SortedMap(), val baseUri: String = "/") {
-  override def toString = baseUri+"#"+path.mkString("/") + (if (params.size > 0) ("?" + paramsToUrlParams(paramList)) else "")
+  override def toString = appendParams(baseUri+"#"+path.map(urlEncode).mkString("/"), paramList)
   def copy(newPath: List[String] = path, newParams: SortedMap[String,SortedSet[String]] = params, newBaseUri: String = baseUri) = new LocationLink(newPath, newParams, newBaseUri)
   def paramList = params.toList.flatMap{case (k,vs) => vs.map(v => (k,v))}
 }
