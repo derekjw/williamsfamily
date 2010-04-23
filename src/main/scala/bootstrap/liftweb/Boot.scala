@@ -45,7 +45,8 @@ class Boot extends Logger {
     // where to search snippet
     addToPackages("ca.williams_family")
 
-    val photoService = new akka.PhotoService
+    val photoService = new akka.PhotoService with akka.RedisPhotoStorageFactory
+
     photoService.start
 
     photoService.setPhoto(Photo("testid", "2010-04-16T10:06:00.00", "1/60", "4.0", "200", "50",1600, 1200, Map("thumbnail" -> Image("thumbnail", "/thumburl.jpg", 180, 180), "preview" -> Image("preview", "/previewurl.jpg", 720, 540))))

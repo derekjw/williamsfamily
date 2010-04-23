@@ -13,20 +13,19 @@ import se.scalablesolutions.akka.config.OneForOneStrategy
 import net.liftweb.json._
 import net.liftweb.json.Serialization.{read, write}
 
-class PhotoService extends Actor with Logger {
+abstract class PhotoService extends Actor with Logger {
   faultHandler = Some(OneForOneStrategy(5, 5000))
   trapExit = List(classOf[Exception])
 
-  val storage: PhotoStorage = spawnLink[RedisPhotoStorage]
+  val storage: PhotoStorage
 
   implicit val formats = Serialization.formats(NoTypeHints)
 
-  info("Photo service starting up")
-
+  def countPhotos = ((this !! CountPhotos) ?~ "Timed out").asA[java.lang.Integer].map(_.intValue)
   def setPhoto(photo: Photo) = this ! SetPhoto(photo.id,write(photo))
   def getPhoto(id: String) =
     for {
-      res <- ((this !! GetPhoto(id)) ?~ "Timed out" ~> 500).asA[Option[String]] ?~ "Invalid response from PhotoStorage" ~> 500
+      res <- ((this !! GetPhoto(id)) ?~ "Timed out" ~> 500).asA[Option[String]] ?~ "Invalid response" ~> 500
       json <- res ?~ "Photo not found" ~> 404
     } yield read[Photo](json)
 
@@ -37,7 +36,6 @@ class PhotoService extends Actor with Logger {
   }
 
   override def shutdown = {
-    info("Photo service is shutting down")
     unlink(storage)
     storage.stop
   }

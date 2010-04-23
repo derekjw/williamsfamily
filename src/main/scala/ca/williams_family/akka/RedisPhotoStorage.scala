@@ -3,9 +3,15 @@ package akka
 
 import net.liftweb.common._
 
+import se.scalablesolutions.akka.actor._
 import se.scalablesolutions.akka.stm.Transaction.Local._
 import se.scalablesolutions.akka.persistence.redis.RedisStorage
 import se.scalablesolutions.akka.config.ScalaConfig._
+
+trait RedisPhotoStorageFactory {
+  self: Actor =>
+  val storage: PhotoStorage = spawnLink[RedisPhotoStorage]
+}
 
 class RedisPhotoStorage extends PhotoStorage with Logger {
   lifeCycle = Some(LifeCycle(Permanent))
