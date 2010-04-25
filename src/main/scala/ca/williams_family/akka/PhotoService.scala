@@ -30,6 +30,7 @@ abstract class PhotoService extends Actor with Logger {
     case CountPhotos => storage forward CountPhotos
     case msg: SetPhoto => storage ! msg
     case msg: GetPhoto => storage forward msg
+    case msg: GetPhotos => storage forward msg
   }
 
   override def shutdown = {

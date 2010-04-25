@@ -24,8 +24,15 @@ object Photo {
 
 case class Image(size: String, fileName: String, width: Int, height: Int)
 
+object R {
+  val common: Map[(Int, Int), Rational] =
+    List(1, 2, 4, 8, 15, 30, 60, 125, 250, 500, 1000).map(d => (1 -> d, Rational(1, d))).toMap
+
+  def apply(n: Int = 1, d: Int = 1): Rational = common.get(n -> d).getOrElse(Rational(n,d))
+}
+
 object Rational {
-  def apply(n: Int, d: Int = 1): Rational = {
+  def apply(n: Int = 1, d: Int = 1): Rational = {
     val m = if (d < 0) (-1) else 1
     val g = MathUtils.gcd(n, d)
     if (g == 0) (new Rational(0,0)) else (new Rational(m * n / g, m * d / g))
@@ -34,7 +41,6 @@ object Rational {
     case r: Rational => Some((r.n, r.d))
     case _ => None
   }
-
 }
 
 class Rational private (val n: Int, val d: Int) {

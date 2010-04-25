@@ -30,14 +30,14 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
 
   "photo storage" ->- empty should {
     "have no photos stored" in {
-      ps.countPhotos must beFull.which(_ must be_==(0))
+      ps.countPhotos must beFull.which(_ must_== 0)
     }
     "insert photos" in {
       Prop.forAll{p: Photo => {
         ps.setPhoto(p)
         ps.getPhoto(p.id) == Full(p)
       }} must pass
-      ps.countPhotos must beFull.which(_ must be_==(100))
+      ps.countPhotos must beFull.which(_ must_== 100)
     }
   }
 }
