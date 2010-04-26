@@ -23,7 +23,7 @@ class HelloWorld {
   lazy val photos = ActorRegistry.actorsFor[PhotoService].head
 
   def updateFragment =
-    JqAjax(url = "/location", data = Stringify(JsObj("fragment" -> JsVar("window", "location", "hash"))))
+    JqAjax(url = "/ajaxloc", data = Stringify(JsObj("fragment" -> JsVar("window", "location", "hash"))))
 
   def tester(in: NodeSeq): NodeSeq =
     Script(OnLoad(

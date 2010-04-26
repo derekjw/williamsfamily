@@ -25,11 +25,11 @@ object AjaxDispatch {
   def table = getAjaxLoc
 
   def getAjaxLoc: DPF = {
-    case r @ Req("ajax" :: Nil, _, PostRequest) =>
+    case r @ Req("ajaxloc" :: Nil, _, PostRequest) =>
       for {
-        json <- r.json ?~ "No json received" ~> 500
-        fragment <- json \ "fragment" \ classOf[JString]
-        ajaxLoc <- AjaxLoc.parse(fragment)
+        json <- r.json ?~ "No json received" ~> 400
+        fragment <- json \ "fragment" \ classOf[JString] ?~ "Invalid json received" ~> 400
+        ajaxLoc <- AjaxLoc.parse(fragment) ?~ "Invalid location requested" ~> 400
         if ajaxLocDispatch.isDefinedAt(ajaxLoc)
         jsCmd <- ajaxLocDispatch(ajaxLoc)
       } yield jsCmd
@@ -69,7 +69,7 @@ object AjaxDispatch {
 }
 
 case class AjaxLoc(path: List[String] = Nil, params: SortedMap[String,SortedSet[String]] = SortedMap(), baseUri: List[String] = Nil) {
-  def toUri = appendParams(baseUri+"#"+path.map(urlEncode).mkString("/"), paramList)
+  def toUri = appendParams("/"+baseUri.map(urlEncode).mkString("/")+"#"+path.map(urlEncode).mkString("/"), paramList)
   def paramList = params.toList.flatMap{case (k,vs) => vs.map(v => (k,v))}
 }
 
