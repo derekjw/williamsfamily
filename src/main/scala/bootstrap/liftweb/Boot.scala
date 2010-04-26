@@ -40,7 +40,7 @@ class Boot extends Logger {
     jsArtifacts = JQuery14Artifacts
 
     RestApi.init
-    LocationHandler.init
+    AjaxDispatch.init
 
     // where to search snippet
     addToPackages("ca.williams_family")

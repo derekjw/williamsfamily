@@ -13,52 +13,74 @@ import JsCmds._
 import util.Helpers._
 
 import collection.immutable.{SortedMap,SortedSet}
-import xml.NodeSeq
+import xml._
 
-object LocationHandler {
+object AjaxDispatch {
+  type DPF = LiftRules.DispatchPF
+
   def init() {
-    LiftRules.dispatch.prepend {
-      case r @ Req("location" :: Nil, _, PostRequest) => () => handleJson(r)
+    LiftRules.dispatch.prepend(table)
+  }
+
+  def table = getAjaxLoc
+
+  def getAjaxLoc: DPF = {
+    case r @ Req("ajax" :: Nil, _, PostRequest) =>
+      for {
+        json <- r.json ?~ "No json received" ~> 500
+        fragment <- json \ "fragment" \ classOf[JString]
+        ajaxLoc <- AjaxLoc.parse(fragment)
+        if ajaxLocDispatch.isDefinedAt(ajaxLoc)
+        jsCmd <- ajaxLocDispatch(ajaxLoc)
+      } yield jsCmd
+  }
+
+  def ajaxLocDispatch: PartialFunction[AjaxLoc, Box[JsCmd]] = {
+
+    case a @ AjaxLoc("photos" :: Nil, p, _) =>
+      Full(<div><a href={a.toUri}>Photos({p})</a></div>)
+
+    case a @ AjaxLoc("photos" :: id :: Nil, p, _) =>
+      Full(<div><a href={a.toUri}>Photo[{id}]({a.paramList})</a></div>)
+
+  }
+
+  implicit def iterableToBox[X](in: Iterable[X]): Box[X] = in.headOption
+
+  implicit def responseFuncBuilder[T](value: T)(implicit cvt: T => LiftResponse): () => Box[LiftResponse] =
+    () => handleFailure(Full(value))(cvt)
+
+  implicit def responseFuncBuilder[T](value: Box[T])(implicit cvt: T => LiftResponse): () => Box[LiftResponse] =
+    () => handleFailure(value)(cvt)
+
+  implicit def handleFailure[T](value: Box[T])(implicit cvt: T => LiftResponse): Box[LiftResponse] = {
+    value match {
+      case ParamFailure(msg, _, _, code: Int) =>
+        Full(InMemoryResponse(msg.getBytes("UTF-8"), ("Content-Type" -> "text/plain; charset=utf-8") :: Nil, Nil, code))
+      case Failure(msg, _, _) => Full(NotFoundResponse(msg))
+      case Empty => Empty
+      case Full(x) => Full(cvt(x))
     }
   }
+  
+  implicit def jsToResponse(in: JsCmd): LiftResponse = JavaScriptResponse(in)
 
-  implicit def iterableToBox[X](in: Iterable[X]): Box[X] = in.toList.headOption
-
-  def handleJson(req: Req): Box[LiftResponse] = {
-    for {
-      json <- req.json ?~ "No json received"
-      JObject(List(JField("fragment", JString(LocationLink(loc))))) <- json
-    } yield createResponse(loc)
-  }
-
-  def createResponse(loc: LocationLink): LiftResponse = loc.path match {
-    case "photos" :: Nil => <div><a href={loc.toString}>Photos({loc.paramList})</a></div>
-    case "photos" :: id :: Nil => <div><a href={loc.toString}>Photo[{id}]({loc.paramList})</a></div>
-    case path => <div>Other: {path.toString}({loc.paramList})</div>
-  }
-
-  private implicit def nodeSeqToLiftResponse(in: NodeSeq): LiftResponse = JavaScriptResponse(SetHtml("content", in))
-
+  implicit def xmlToJs(in: Elem): JsCmd = SetHtml("content", in)
 }
 
-class LocationLink(val path: List[String], val params: SortedMap[String,SortedSet[String]] = SortedMap(), val baseUri: String = "/") {
-  override def toString = appendParams(baseUri+"#"+path.map(urlEncode).mkString("/"), paramList)
-  def copy(newPath: List[String] = path, newParams: SortedMap[String,SortedSet[String]] = params, newBaseUri: String = baseUri) = new LocationLink(newPath, newParams, newBaseUri)
+case class AjaxLoc(path: List[String] = Nil, params: SortedMap[String,SortedSet[String]] = SortedMap(), baseUri: List[String] = Nil) {
+  def toUri = appendParams(baseUri+"#"+path.map(urlEncode).mkString("/"), paramList)
   def paramList = params.toList.flatMap{case (k,vs) => vs.map(v => (k,v))}
 }
 
-object LocationLink {
-  private val LocationRegex = """^#([^?]*)\??(.*)$""".r
+object AjaxLoc {
+  private val LocRegex = """^#([^?]*)\??(.*)$""".r
 
-  def apply(path: List[String], params: SortedMap[String,SortedSet[String]]) = new LocationLink(path, params)
-  def apply(path: List[String]) = new LocationLink(path)
-  def apply(in: String): Option[LocationLink] = unapply(in)
-  def unapply(in: String): Option[LocationLink] = in match {
-    case LocationRegex(path, "") => Some(LocationLink(parsePath(path)))
-    case LocationRegex(path, params) => Some(LocationLink(parsePath(path), parseParams(params)))
+  def parse(in: String): Option[AjaxLoc] = in match {
+    case LocRegex(path, "") => Some(AjaxLoc(parsePath(path)))
+    case LocRegex(path, params) => Some(AjaxLoc(parsePath(path), parseParams(params)))
     case _ => None
   }
-  def unapply(in: LocationLink): Option[(List[String], SortedMap[String, SortedSet[String]])] = Some((in.path, in.params))
 
   private def parsePath(in: String) = Req.parsePath(in).partPath
 
