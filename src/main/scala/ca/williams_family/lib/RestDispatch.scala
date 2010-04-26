@@ -10,7 +10,7 @@ import json.Serialization.{read, write}
 import json.Extraction.{decompose}
 import se.scalablesolutions.akka.actor.ActorRegistry
 
-object RestApi {
+object RestDispatch {
   def init() {
     LiftRules.statelessDispatchTable.append {
       case r @ Req("api" :: "photos" :: photoId :: Nil, _, GetRequest) => () => getPhoto(r, photoId)
