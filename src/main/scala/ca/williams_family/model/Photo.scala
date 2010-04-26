@@ -29,12 +29,16 @@ object R {
     List(1, 2, 4, 8, 15, 30, 60, 125, 250, 500, 1000).map(d => (1 -> d, Rational(1, d))).toMap
 
   def apply(n: Int = 1, d: Int = 1): Rational = common.get(n -> d).getOrElse(Rational(n,d))
+
+  object Implicits {
+    implicit def rationalToJValue(in: Rational): JValue = JArray(List(JInt(in.n), JInt(in.d)))
+  }
 }
 
 object Rational {
   def apply(n: Int = 1, d: Int = 1): Rational = {
     val m = if (d < 0) (-1) else 1
-    val g = MathUtils.gcd(n, d)
+    val g = if (n == 1 || d == 1) (1) else (MathUtils.gcd(n, d))
     if (g == 0) (new Rational(0,0)) else (new Rational(m * n / g, m * d / g))
   }
   def unapply(in: Any): Option[(Int,Int)] = in match {
