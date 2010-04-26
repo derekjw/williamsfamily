@@ -30,8 +30,8 @@ object AjaxDispatch {
         json <- r.json ?~ "No json received" ~> 400
         fragment <- json \ "fragment" \ classOf[JString] ?~ "Invalid json received" ~> 400
         ajaxLoc <- AjaxLoc.parse(fragment) ?~ "Invalid location requested" ~> 400
-        if ajaxLocDispatch.isDefinedAt(ajaxLoc)
-        jsCmd <- ajaxLocDispatch(ajaxLoc)
+        found <- ajaxLocDispatch.lift(ajaxLoc) ?~ "Not found" ~> 404
+        jsCmd <- found
       } yield jsCmd
   }
 
