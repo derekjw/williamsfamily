@@ -23,11 +23,13 @@ class RedisPhotoDateIndex extends PhotoDateIndex with Logger {
 
   private val index = atomic { RedisStorage.getMap("photoDateIndex") }
 
-  def setPhoto(photo: Photo): Unit = {
-    val indexId = photo.id.take(6)
-    index.put(indexId, compact(render((index.get(indexId).map(b => parse(b).values).asA[List[String]].map(l => SortedSet(l:_*)).getOrElse(SortedSet[String]()) + photo.id).toList)))
-  }
+  def getSet(key: Int): idxSet =
+    index.get(key).map(b => parse(b).values).asA[List[String]].map(l => set(l:_*)).getOrElse(set())
 
+  def putSet(key: Int, newSet: idxSet): Unit =
+    index.put(key, compact(render(newSet.toList)))
+
+  private implicit def intToByteArray(in: Int): Array[Byte] = stringToByteArray(in.toString)
   private implicit def stringToByteArray(in: String): Array[Byte] = in.getBytes("UTF-8")
   private implicit def asString(in: Array[Byte]): String = new String(in, "UTF-8")
 }
