@@ -3,6 +3,8 @@ package akka
 
 import net.liftweb.common._
 
+import model._
+
 import se.scalablesolutions.akka.actor._
 import se.scalablesolutions.akka.stm._
 import se.scalablesolutions.akka.stm.Transaction.Local._
@@ -18,16 +20,13 @@ class InMemoryPhotoStorage extends PhotoStorage with Logger {
 
   private val photos = atomic { TransactionalState.newMap[String, String] }
 
-  def receive = {
-    case CountPhotos => reply(photos.size)
-    case SetPhoto(id,json) => {
-      info("Setting: "+json)
-      photos.put(id,json)
-    }
-    case GetPhoto(id) => {
-      info("Getting: "+photos.get(id))
-      reply(photos.get(id))
-    }
-  }
+  def countPhotos = photos.size
+
+  def setPhoto(photo: Photo): Unit = setPhoto(photo, Photo.serialize(photo))
+
+  def setPhoto(photo: Photo, json: String): Unit = photos.put(photo.id,json)
+
+  def getPhoto(id: String): Option[String] = photos.get(id)
+
 }
 

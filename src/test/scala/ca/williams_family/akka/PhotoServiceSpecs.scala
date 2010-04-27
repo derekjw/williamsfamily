@@ -14,7 +14,7 @@ import net.liftweb.common._
 
 import model._
 
-class InMemoryPhotoService extends PhotoService with InMemoryPhotoStorageFactory
+class InMemoryPhotoService extends PhotoService with InMemoryPhotoStorageFactory with InMemoryPhotoDateIndexFactory
 
 class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
   var ps: InMemoryPhotoService = _

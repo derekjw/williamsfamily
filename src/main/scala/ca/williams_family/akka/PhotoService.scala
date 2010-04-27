@@ -18,8 +18,10 @@ abstract class PhotoService extends Actor with Logger {
 
   val storage: PhotoStorage
 
+  val photoDateIndex: PhotoDateIndex
+
   def countPhotos = ((this !! CountPhotos) ?~ "Timed out").asA[java.lang.Integer].map(_.intValue)
-  def setPhoto(photo: Photo) = this ! SetPhoto(photo.id,Photo.serialize(photo))
+  def setPhoto(photo: Photo) = this ! SetPhoto(photo,Empty)
   def getPhoto(id: String) =
     for {
       res <- ((this !! GetPhoto(id)) ?~ "Timed out" ~> 500).asA[Option[String]] ?~ "Invalid response" ~> 500

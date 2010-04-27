@@ -45,7 +45,7 @@ class Boot extends Logger {
     // where to search snippet
     addToPackages("ca.williams_family")
 
-    val photoService = new akka.PhotoService with akka.RedisPhotoStorageFactory
+    val photoService = new akka.PhotoService with akka.RedisPhotoStorageFactory with akka.RedisPhotoDateIndexFactory
 
     photoService.start
 
