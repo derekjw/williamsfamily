@@ -36,7 +36,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
     }
   }
 
-  val large = new Context {
+  val full = new Context {
     before {
       ps = new InMemoryPhotoService
       ps.start
@@ -61,13 +61,12 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
     }
   }
 
-  "photo date index" ->- large should {
+  "photo date index" ->- full should {
     "return ids of inserted photos" in {
-      val idx = ActorRegistry.actorsFor[PhotoDateIndex].head
       Prop.forAll{p: Photo => {
         ps.setPhoto(p)
-        val Full(r) = ps.getPhotosByDate(p.id.take(6).toInt)
-        r(p.id)
+        val r = ps.getPhotosByDate(p.id.take(6).toInt)
+        r.isDefined && r.exists(_(p.id))
       }} must pass
     }
   }
