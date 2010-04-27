@@ -4,6 +4,10 @@ package specs
 
 import org.scalacheck._
 
+import java.util.Date
+import java.util.Calendar
+import java.text.SimpleDateFormat
+
 import Gen._
 import Arbitrary.arbitrary
 
@@ -27,16 +31,32 @@ object Generators {
   implicit def arbRational: Arbitrary[Rational] =
     Arbitrary { genRational }
 
+  val isoDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+  val idDateFormat = new SimpleDateFormat("yyyyMMdd-HHmmss00")
+
+  def genPhotoDate: Gen[Date] = {
+    val cal = Calendar.getInstance
+    cal.set(2000,1,1)
+    val calstart = cal.getTimeInMillis
+    cal.set(2010,1,1)
+    val calend = cal.getTimeInMillis
+    Gen.choose(calstart,calend).map{i => cal.setTimeInMillis(i); cal.getTime}
+  }
+
+  def genIdHash: Gen[String] = {
+    Gen.choose(java.lang.Integer.MIN_VALUE, java.lang.Integer.MAX_VALUE).map(java.lang.Integer.toHexString)
+  }
+
   def genPhoto: Gen[Photo] = for {
-    id <- arbitrary[String] suchThat (_.length > 0)
-    da <- arbitrary[String] suchThat (_.length > 0)
+    id <- genIdHash
+    da <- genPhotoDate
     ex <- arbitrary[Rational]
     ap <- arbitrary[Rational]
     is <- Gen.choose(100,10000)
     fo <- arbitrary[Rational]
     he <- Gen.choose(1000,10000)
     wi <- Gen.choose(1000,10000)
-  } yield Photo(id, da, ex, ap, is, fo, he, wi, Map())
+  } yield Photo(idDateFormat.format(da)+"-"+id, isoDateFormat.format(da), ex, ap, is, fo, he, wi, Map())
 
   implicit def arbPhoto: Arbitrary[Photo] = {
     Arbitrary { genPhoto }

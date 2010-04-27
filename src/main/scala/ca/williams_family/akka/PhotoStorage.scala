@@ -3,9 +3,11 @@ package akka
 
 import model._
 
-import se.scalablesolutions.akka.actor.Transactor
+import se.scalablesolutions.akka.actor._
 
 trait PhotoStorage extends Transactor {
+  private lazy val indexes = ActorRegistry.actorsFor[PhotoIndex]
+
   def receive = {
     case CountPhotos => reply(countPhotos)
     case SetPhoto(photo, None) => setPhoto(photo)
