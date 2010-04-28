@@ -31,7 +31,7 @@ abstract class PhotoService extends Transactor with Logger {
 
   def countPhotos = ((this !! CountPhotos) ?~ "Timed out").asA[java.lang.Integer].map(_.intValue)
 
-  def setPhoto(photo: Photo) = this ! SetPhoto(photo,None)
+  def setPhoto(photo: Photo) = this ! SetPhoto(photo,Photo.serialize(photo))
 
   def getPhoto(id: String) =
     for {

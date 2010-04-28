@@ -18,15 +18,13 @@ trait InMemoryPhotoStorageFactory {
 class InMemoryPhotoStorage extends PhotoStorage with Logger {
   lifeCycle = Some(LifeCycle(Permanent))
 
-  private val photos = atomic { TransactionalState.newMap[String, String] }
+  private val photos = atomic { TransactionalState.newMap[K, V] }
 
-  def countPhotos = photos.size
+  def get(k: K): Option[V] = photos.get(k)
 
-  def setPhoto(photo: Photo): Unit = setPhoto(photo, Photo.serialize(photo))
+  def put(k: K, v: V): Unit = photos.put(k, v)
 
-  def setPhoto(photo: Photo, json: String): Unit = photos.put(photo.id,json)
-
-  def getPhoto(id: String): Option[String] = photos.get(id)
+  def size: Int = photos.size
 
 }
 

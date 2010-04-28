@@ -6,20 +6,22 @@ import model._
 import se.scalablesolutions.akka.actor._
 
 trait PhotoStorage extends Transactor {
-  private lazy val indexes = ActorRegistry.actorsFor[PhotoIndex]
+  type V = String
+  type K = String
 
   def receive = {
-    case CountPhotos => reply(countPhotos)
-    case SetPhoto(photo, None) => setPhoto(photo)
-    case SetPhoto(photo, Some(json)) => setPhoto(photo,json)
+    case CountPhotos => reply(size)
+    case SetPhoto(photo, json) => setPhoto(photo, json)
     case GetPhoto(id) => reply(getPhoto(id))
   }
 
-  def countPhotos: Int
+  def get(k: K): Option[V]
 
-  def setPhoto(photo: Photo): Unit
+  def put(k: K, v: V): Unit
 
-  def setPhoto(photo: Photo, json: String): Unit
+  def size: Int
 
-  def getPhoto(id: String): Option[String]
+  def setPhoto(photo: Photo, v: V): Unit = put(photo.id,v)
+
+  def getPhoto(k: K): Option[V] = get(k)
 }

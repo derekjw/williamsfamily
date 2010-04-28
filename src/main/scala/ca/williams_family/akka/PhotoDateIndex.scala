@@ -8,22 +8,23 @@ import model._
 import se.scalablesolutions.akka.actor.Transactor
 
 trait PhotoDateIndex extends PhotoIndex {
-  type idxSet = SortedSet[String]
-  val set = SortedSet[String] _
+  type V = SortedSet[String]
+  type K = Int
+  val nV = SortedSet[String] _
 
   def receive = {
     case SetPhoto(photo,_) => setPhoto(photo)
-    case GetPhotosByDate(date) => reply(getPhotosByDate(date))
+    case GetPhotosByDate(date) => reply(getPhotos(date))
   }
 
-  def setPhoto(photo: Photo): Unit = withSet(photo.id.take(6).toInt)(_ + photo.id)
+  def setPhoto(photo: Photo): Unit = modify(photo.id.take(6).toInt)(_ + photo.id)
 
-  def getPhotosByDate(date: Int): idxSet = getSet(date)
+  def getPhotos(k: K): V = get(k)
 
-  def getSet(key: Int): idxSet
+  def get(k: K): V
 
-  def putSet(key: Int, newSet: idxSet): Unit
+  def put(k: K, v: V): Unit
   
-  def withSet(key: Int)(f: (idxSet) => idxSet): Unit = putSet(key, f(getSet(key)))
+  def modify(k: K)(f: (V) => V): Unit = put(k, f(get(k)))
 
 }

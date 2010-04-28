@@ -16,20 +16,15 @@ import se.scalablesolutions.akka.stm.Transaction.Local._
 import se.scalablesolutions.akka.persistence.redis.RedisStorage
 import se.scalablesolutions.akka.config.ScalaConfig._
 
-class RedisPhotoDateIndex extends PhotoDateIndex with Logger {
+class RedisPhotoDateIndex extends PhotoDateIndex with Logger with RedisHelpers {
   lifeCycle = Some(LifeCycle(Permanent))
 
-  info("Redis photo date index is starting up.")
+  private val idx = atomic { RedisStorage.getMap("photoDateIndex") }
 
-  private val index = atomic { RedisStorage.getMap("photoDateIndex") }
+  def get(k: K): V =
+    idx.get(k).map(b => parse(b).values).asA[List[String]].map(l => nV(l:_*)).getOrElse(nV())
 
-  def getSet(key: Int): idxSet =
-    index.get(key).map(b => parse(b).values).asA[List[String]].map(l => set(l:_*)).getOrElse(set())
+  def put(k: K, v: V): Unit =
+    idx.put(k, compact(render(v.toList)))
 
-  def putSet(key: Int, newSet: idxSet): Unit =
-    index.put(key, compact(render(newSet.toList)))
-
-  private implicit def intToByteArray(in: Int): Array[Byte] = stringToByteArray(in.toString)
-  private implicit def stringToByteArray(in: String): Array[Byte] = in.getBytes("UTF-8")
-  private implicit def asString(in: Array[Byte]): String = new String(in, "UTF-8")
 }

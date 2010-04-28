@@ -15,11 +15,11 @@ import se.scalablesolutions.akka.config.ScalaConfig._
 class InMemoryPhotoDateIndex extends PhotoDateIndex with Logger {
   lifeCycle = Some(LifeCycle(Permanent))
 
-  private val index = atomic { TransactionalState.newMap[Int, idxSet] }
+  private val index = atomic { TransactionalState.newMap[K, V] }
 
-  def getSet(key: Int): idxSet =
-    index.get(key).getOrElse(set())
+  def get(k: K): V =
+    index.get(k).getOrElse(nV())
 
-  def putSet(key: Int, newSet: idxSet): Unit =
-    index.put(key, newSet)
+  def put(k: K, v: V): Unit =
+    index.put(k, v)
 }
