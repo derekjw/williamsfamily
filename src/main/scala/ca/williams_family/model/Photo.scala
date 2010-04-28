@@ -22,13 +22,24 @@ object Photo {
   }
 }
 
-case class Image(size: String, fileName: String, width: Int, height: Int)
+case class Image(fileName: String, fileSize: Int, hash: String, width: Int, height: Int)
 
 object R {
   val common: Map[(Int, Int), Rational] =
     List(1, 2, 4, 8, 15, 30, 60, 125, 250, 500, 1000).map(d => (1 -> d, Rational(1, d))).toMap
 
   def apply(n: Int = 1, d: Int = 1): Rational = common.get(n -> d).getOrElse(Rational(n,d))
+
+  def apply(in: String): Rational =
+    in.split("/").toList match {
+      case n :: d :: Nil => R(n.toInt,d.toInt)
+      case n :: Nil => R(n.toInt)
+      case _ => R(0)
+    }
+
+  def apply(in: Double): Rational = {
+    R((in * 1000).toInt, 1000)
+  }
 
   object Implicits {
     implicit def rationalToJValue(in: Rational): JValue = JArray(List(JInt(in.n), JInt(in.d)))

@@ -51,8 +51,6 @@ class Boot extends Logger {
 
     photoService.registerIndex(new akka.RedisPhotoDateIndex)
 
-    photoService.setPhoto(Photo("testid", "2010-04-16T10:06:00.00", Rational(1,60), Rational(40,10), 200, Rational(50),1600, 1200, Map("thumbnail" -> Image("thumbnail", "/thumburl.jpg", 180, 180), "preview" -> Image("preview", "/previewurl.jpg", 720, 540))))
-
     // Build SiteMap
     val entries =
       Menu(Loc("Home", List("index"), "Home")) ::
