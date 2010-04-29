@@ -3,6 +3,8 @@ package akka
 
 import model._
 
-import se.scalablesolutions.akka.actor.Transactor
+import se.scalablesolutions.akka.actor.Actor
+import se.scalablesolutions.akka.dispatch._
 
-trait PhotoIndex extends Transactor
+
+trait PhotoIndex extends Actor

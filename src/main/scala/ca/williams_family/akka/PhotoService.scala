@@ -11,12 +11,11 @@ import model._
 import se.scalablesolutions.akka.actor._
 import se.scalablesolutions.akka.dispatch._
 import se.scalablesolutions.akka.config.ScalaConfig._
-import se.scalablesolutions.akka.config.OneForOneStrategy
-//import se.scalablesolutions.akka.stm.Transaction.Local._
+import se.scalablesolutions.akka.config._
 
 import net.liftweb.json._
 
-abstract class PhotoService extends Transactor with Logger {
+abstract class PhotoService extends Actor {
   faultHandler = Some(OneForOneStrategy(5, 5000))
   trapExit = List(classOf[Exception])
 
@@ -31,13 +30,13 @@ abstract class PhotoService extends Transactor with Logger {
 
   def countPhotos = ((this !! CountPhotos) ?~ "Timed out").asA[java.lang.Integer].map(_.intValue)
 
-  def setPhoto(photo: Photo) = this ! SetPhoto(photo,Photo.serialize(photo))
+  def setPhoto(photo: Photo): Future = this !!! SetPhoto(photo)
 
   def getPhoto(id: String) =
     for {
-      res <- ((this !! GetPhoto(id)) ?~ "Timed out" ~> 500).asA[Option[String]] ?~ "Invalid response" ~> 500
-      json <- res ?~ "Photo not found" ~> 404
-    } yield Photo.deserialize(json)
+      res <- ((this !! GetPhoto(id)) ?~ "Timed out" ~> 500).asA[Option[Photo]] ?~ "Invalid response" ~> 500
+      photo <- res ?~ "Photo not found" ~> 404
+    } yield photo
 
   def getPhotosByDate(key: Int): Box[SortedSet[String]] =
     for {
@@ -47,7 +46,7 @@ abstract class PhotoService extends Transactor with Logger {
   def receive = {
     case CountPhotos => storage forward CountPhotos
     case msg: SetPhoto => {
-      storage ! msg
+      storage forward msg
       indexes.foreach(_ ! msg)
     }
     case msg: GetPhoto => storage forward msg

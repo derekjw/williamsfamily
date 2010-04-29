@@ -5,8 +5,6 @@ import collection.SortedSet
 
 import model._
 
-import se.scalablesolutions.akka.actor.Transactor
-
 trait PhotoDateIndex extends PhotoIndex {
   type V = SortedSet[String]
   type K = Int

@@ -16,6 +16,9 @@ import se.scalablesolutions.akka.actor.ActorRegistry
 import se.scalablesolutions.akka.dispatch.Futures._
 
 import net.liftweb.common._
+import net.liftweb.util.Helpers._
+
+import java.io.{File, FileFilter}
 
 import model._
 
@@ -41,7 +44,21 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       ps = new InMemoryPhotoService
       ps.start
       ps.registerIndex(new InMemoryPhotoDateIndex)
-      (1 to 10000).foreach(i => genPhoto.sample.foreach(ps.setPhoto))
+      awaitAll((1 to 10000).flatMap(i => genPhoto.sample.map(ps.setPhoto)).toList)
+    }
+    after {
+      ps.stop
+    }
+  }
+
+  val production = new Context {
+    before {
+      ps = new InMemoryPhotoService
+      ps.start
+      ps.registerIndex(new InMemoryPhotoDateIndex)
+      val dir = new File("output")
+      val filter = new FileFilter() { def accept(file: File): Boolean = { file.getName.endsWith(".json") } }
+      awaitAll(dir.listFiles(filter).map(f => ps.setPhoto(Photo.deserialize(new String(readWholeFile(f), "UTF-8")))).toList)
     }
     after {
       ps.stop
@@ -54,7 +71,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
     }
     "insert photos" in {
       Prop.forAll{p: Photo => {
-        ps.setPhoto(p)
+        ps.setPhoto(p).await
         ps.getPhoto(p.id) == Full(p)
       }} must pass
       ps.countPhotos must beFull.which(_ must_== 100)
@@ -70,4 +87,12 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       }} must pass
     }
   }
+
+  /*"production photos" ->- production should {
+    "have proper count" in {
+      ps.countPhotos must beFull.which(_ must_== 17454)
+      ps.getPhotosByDate(200912) must beFull.which(_.size must_== 247)
+    }
+  }*/
 }
+

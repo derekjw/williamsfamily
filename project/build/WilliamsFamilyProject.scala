@@ -21,6 +21,7 @@ class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info)
   //val flickr = "net.fyrie" %% "flickr-api" % "1.0-SNAPSHOT"
 
   val akkaRedis = "se.scalablesolutions.akka" %% "akka-persistence-redis"  % "0.8.1" % "compile"
+  val akkaPatterns = "se.scalablesolutions.akka" %% "akka-patterns"  % "0.8.1" % "compile"
 
   val apacheMath = "org.apache.commons" % "commons-math" % "2.1"
 

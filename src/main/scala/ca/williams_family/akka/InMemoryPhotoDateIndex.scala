@@ -12,14 +12,14 @@ import se.scalablesolutions.akka.stm._
 import se.scalablesolutions.akka.stm.Transaction.Local._
 import se.scalablesolutions.akka.config.ScalaConfig._
 
-class InMemoryPhotoDateIndex extends PhotoDateIndex with Logger {
+class InMemoryPhotoDateIndex extends PhotoDateIndex {
   lifeCycle = Some(LifeCycle(Permanent))
 
   private val index = atomic { TransactionalState.newMap[K, V] }
 
   def get(k: K): V =
-    index.get(k).getOrElse(nV())
+    atomic { index.get(k).getOrElse(nV()) }
 
   def put(k: K, v: V): Unit =
-    index.put(k, v)
+    atomic { index.put(k, v) }
 }

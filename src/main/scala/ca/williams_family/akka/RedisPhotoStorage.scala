@@ -15,10 +15,10 @@ trait RedisPhotoStorageFactory {
   val storage: PhotoStorage = spawnLink[RedisPhotoStorage]
 }
 
-class RedisPhotoStorage extends PhotoStorage with Logger with RedisHelpers {
+class RedisPhotoStorage extends PhotoStorage with RedisHelpers {
   lifeCycle = Some(LifeCycle(Permanent))
 
-  private lazy val photos = atomic { RedisStorage.getMap("photos") }
+  private val photos = atomic { RedisStorage.getMap("photos") }
 
   def get(k: K): Option[V] = photos.get(k).map(asString)
 
