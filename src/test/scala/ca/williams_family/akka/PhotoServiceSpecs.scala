@@ -51,6 +51,18 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
     }
   }
 
+  val fullNonBlocking = new Context {
+    before {
+      ps = new InMemoryPhotoService
+      ps.start
+      ps.registerIndex(new InMemoryPhotoDateIndex)
+      (1 to 10000).foreach(i => genPhoto.sample.foreach(ps.setPhoto))
+    }
+    after {
+      ps.stop
+    }
+  }
+
   val production = new Context {
     before {
       ps = new InMemoryPhotoService
@@ -58,7 +70,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       ps.registerIndex(new InMemoryPhotoDateIndex)
       val dir = new File("output")
       val filter = new FileFilter() { def accept(file: File): Boolean = { file.getName.endsWith(".json") } }
-      awaitAll(dir.listFiles(filter).map(f => ps.setPhoto(Photo.deserialize(new String(readWholeFile(f), "UTF-8")))).toList)
+      awaitAll(dir.listFiles(filter).toList.map(f => ps.setPhoto(Photo.deserialize(new String(readWholeFile(f), "UTF-8")))))
     }
     after {
       ps.stop
@@ -78,12 +90,11 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
     }
   }
 
-  "photo date index" ->- full should {
+  "photo date index" ->- fullNonBlocking should {
     "return ids of inserted photos" in {
       Prop.forAll{p: Photo => {
         ps.setPhoto(p)
-        val r = ps.getPhotosByDate(p.id.take(6).toInt)
-        r.isDefined && r.exists(_(p.id))
+        ps.getPhotosByDate(p.id.take(6).toInt).exists(_(p.id))
       }} must pass
     }
   }

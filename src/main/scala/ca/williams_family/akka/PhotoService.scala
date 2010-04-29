@@ -10,6 +10,7 @@ import model._
 
 import se.scalablesolutions.akka.actor._
 import se.scalablesolutions.akka.dispatch._
+import Futures._
 import se.scalablesolutions.akka.config.ScalaConfig._
 import se.scalablesolutions.akka.config._
 
@@ -21,7 +22,7 @@ abstract class PhotoService extends Actor {
 
   val storage: PhotoStorage
 
-  protected var indexes: Set[PhotoIndex] = Set()
+  var indexes: Set[PhotoIndex] = Set()
 
   def registerIndex(index: PhotoIndex) {
     startLink(index)
@@ -34,8 +35,7 @@ abstract class PhotoService extends Actor {
 
   def getPhoto(id: String) =
     for {
-      res <- ((this !! GetPhoto(id)) ?~ "Timed out" ~> 500).asA[Option[Photo]] ?~ "Invalid response" ~> 500
-      photo <- res ?~ "Photo not found" ~> 404
+      photo <- ((this !! GetPhoto(id)) ?~ "Timed out" ~> 500).asA[Photo] ?~ "Photo Not Found" ~> 404
     } yield photo
 
   def getPhotosByDate(key: Int): Box[SortedSet[String]] =

@@ -1,6 +1,8 @@
 package ca.williams_family
 package akka
 
+import net.liftweb.common.Box
+import Box._
 import model._
 
 import se.scalablesolutions.akka.actor._
@@ -19,7 +21,10 @@ trait PhotoStorage extends Actor {
       setPhoto(photo, json)
       reply(true)
     }
-    case GetPhoto(id) => reply(getPhoto(id).map(Photo.deserialize))
+    case GetPhoto(id) => getPhoto(id) match {
+      case Some(p) => photoSerializer forward SerializedPhoto(p)
+      case _ =>reply(None)
+    }
   }
 
   def get(k: K): Option[V]
