@@ -16,7 +16,8 @@ import se.scalablesolutions.akka.actor.ActorRegistry
 import se.scalablesolutions.akka.dispatch.Futures._
 
 import net.liftweb.common._
-import net.liftweb.util.Helpers._
+import net.liftweb.util.IoHelpers._
+import net.liftweb.util.TimeHelpers._
 
 import java.io.{File, FileFilter}
 
@@ -70,7 +71,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       ps.registerIndex(new InMemoryPhotoDateIndex)
       val dir = new File("output")
       val filter = new FileFilter() { def accept(file: File): Boolean = { file.getName.endsWith(".json") } }
-      awaitAll(dir.listFiles(filter).toList.map(f => ps.setPhoto(Photo.deserialize(new String(readWholeFile(f), "UTF-8")))))
+      logTime("Loading production photos")(awaitAll(dir.listFiles(filter).toList.map(f => ps.setPhoto(Photo.deserialize(new String(readWholeFile(f), "UTF-8"))))))
     }
     after {
       ps.stop
@@ -94,15 +95,18 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
     "return ids of inserted photos" in {
       Prop.forAll{p: Photo => {
         ps.setPhoto(p)
-        ps.getPhotosByDate(p.id.take(6).toInt).exists(_(p.id))
+        val date = p.createDate.take(10).split('-').toList.map(_.toInt)
+        ps.getPhotosByDate(date).exists(_(p.id)) && ps.getPhotosByDate(List(date.head, date.tail.head)).exists(_(p.id)) && ps.getPhotosByDate(List(date.head)).exists(_(p.id))
       }} must pass
     }
   }
 
-  /*"production photos" ->- production should {
+/*  "production photos" ->- production should {
     "have proper count" in {
       ps.countPhotos must beFull.which(_ must_== 17454)
-      ps.getPhotosByDate(200912) must beFull.which(_.size must_== 247)
+      logTime("Getting index for year")(ps.getPhotosByDate(List(2009))) must beFull.which(_.size must_== 3917)
+      logTime("Getting index for month")(ps.getPhotosByDate(List(2009,12))) must beFull.which(_.size must_== 247)
+      logTime("Getting index for day")(ps.getPhotosByDate(List(2009,12,25))) must beFull.which(_.size must_== 157)
     }
   }*/
 }

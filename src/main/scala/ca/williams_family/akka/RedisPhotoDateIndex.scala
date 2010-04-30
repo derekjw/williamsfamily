@@ -15,7 +15,7 @@ import se.scalablesolutions.akka.actor._
 import se.scalablesolutions.akka.stm.Transaction.Local._
 import se.scalablesolutions.akka.persistence.redis.RedisStorage
 import se.scalablesolutions.akka.config.ScalaConfig._
-
+/*
 class RedisPhotoDateIndex extends PhotoDateIndex with RedisHelpers {
   lifeCycle = Some(LifeCycle(Permanent))
 
@@ -28,3 +28,4 @@ class RedisPhotoDateIndex extends PhotoDateIndex with RedisHelpers {
     idx.put(k, compact(render(v.toList)))
 
 }
+*/

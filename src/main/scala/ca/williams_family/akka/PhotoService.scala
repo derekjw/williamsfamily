@@ -38,7 +38,7 @@ abstract class PhotoService extends Actor {
       photo <- ((this !! GetPhoto(id)) ?~ "Timed out" ~> 500).asA[Photo] ?~ "Photo Not Found" ~> 404
     } yield photo
 
-  def getPhotosByDate(key: Int): Box[SortedSet[String]] =
+  def getPhotosByDate(key: List[Int]): Box[SortedSet[String]] =
     for {
       res <- ((this !! GetPhotosByDate(key)) ?~ "Timed out").asA[SortedSet[String]] ?~ "Invalid Response"
     } yield res
