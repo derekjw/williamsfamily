@@ -9,16 +9,8 @@ class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info)
     <dependencies>
       <dependency org="net.liftweb" name="lift-webkit" rev="2.0-scala280-SNAPSHOT"><exclude module="log4j"/><exclude module="slf4j-log4j12"/></dependency>
       <dependency org="net.liftweb" name="lift-util" rev="2.0-scala280-SNAPSHOT"><exclude module="log4j"/><exclude module="slf4j-log4j12"/></dependency>
-      <dependency org="net.liftweb" name="lift-record" rev="2.0-scala280-SNAPSHOT"><exclude module="log4j"/><exclude module="slf4j-log4j12"/></dependency>
       <dependency org="net.liftweb" name="lift-json" rev="2.0-scala280-SNAPSHOT"><exclude module="log4j"/><exclude module="slf4j-log4j12"/></dependency>
     </dependencies>
-
-  //val liftWebkit = "net.liftweb" % "lift-webkit" % "2.0-scala280-SNAPSHOT"
-  //val liftRecord = "net.liftweb" % "lift-record" % "2.0-scala280-SNAPSHOT"
-  //val liftJson = "net.liftweb" % "lift-json" % "2.0-scala280-SNAPSHOT"
-  //val dispatchHttp = "net.databinder" %% "dispatch-http" % "0.7.0"
-
-  //val flickr = "net.fyrie" %% "flickr-api" % "1.0-SNAPSHOT"
 
   val akkaRedis = "se.scalablesolutions.akka" %% "akka-persistence-redis"  % "0.8.1" % "compile"
   val akkaPatterns = "se.scalablesolutions.akka" %% "akka-patterns"  % "0.8.1" % "compile"
