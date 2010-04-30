@@ -62,12 +62,14 @@ class InMemoryPhotoDateIndex extends PhotoDateIndex {
         case _ => reply(empty)
       }
       case GetPhotosByDate(Nil) =>
-        reply(months.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
-          case (s, f) => {
-            f.await
-            f.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
-          }
-        })
+        Actor.spawn{
+          reply(months.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
+            case (s, f) => {
+              f.await
+              f.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
+            }
+          })
+        }
       case SetPhotoDateIndex(p, month :: rest) => months.get(month).getOrElse{
         val a = new MonthIndex(year, month)
         startLink(a)
@@ -96,12 +98,14 @@ class InMemoryPhotoDateIndex extends PhotoDateIndex {
           case _ => reply(empty)
         }
         case GetPhotosByDate(Nil) =>
-          reply(days.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
-            case (s, f) => {
-              f.await
-              f.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
-            }
-          })
+          Actor.spawn{
+            reply(days.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
+              case (s, f) => {
+                f.await
+                f.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
+              }
+            })
+          }
         case SetPhotoDateIndex(p, day :: rest)  => days.get(day).getOrElse{
           val a = new DayIndex(year, month, day)
           startLink(a)
