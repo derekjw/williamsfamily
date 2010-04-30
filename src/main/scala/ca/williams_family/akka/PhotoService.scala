@@ -24,9 +24,24 @@ abstract class PhotoService extends Actor {
 
   var indexes: Set[PhotoIndex] = Set()
 
-  def registerIndex(index: PhotoIndex) {
-    startLink(index)
-    indexes += index
+  def registerIndex(index: PhotoIndex) { registerIndex(List(index)) }
+
+  def registerIndex(index: Iterable[PhotoIndex]) {
+    index.foreach{i =>
+      startLink(i)
+      indexes += i
+    }
+    reIndex(index)
+  }
+
+  def reIndex(index: Iterable[PhotoIndex]) {
+    ((this !! GetPhotoIds) ?~ "Timed out").asA[List[String]].getOrElse(Nil).map(i => this !!! GetPhoto(i)).foreach{f =>
+      f.await
+      for {
+        photo <- Box(f.result).asA[Photo]
+        idx <- index
+      } {idx ! SetPhoto(photo)}
+    }
   }
 
   def countPhotos = ((this !! CountPhotos) ?~ "Timed out").asA[java.lang.Integer].map(_.intValue)
@@ -45,6 +60,7 @@ abstract class PhotoService extends Actor {
 
   def receive = {
     case CountPhotos => storage forward CountPhotos
+    case GetPhotoIds => storage forward GetPhotoIds
     case msg: SetPhoto => {
       storage forward msg
       indexes.foreach(_ ! msg)

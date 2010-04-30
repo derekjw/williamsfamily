@@ -64,6 +64,17 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
     }
   }
 
+  val fullNoIndexes = new Context {
+    before {
+      ps = new InMemoryPhotoService
+      ps.start
+      awaitAll((1 to 10000).flatMap(i => genPhoto.sample.map(ps.setPhoto)).toList)
+    }
+    after {
+      ps.stop
+    }
+  }
+
   val production = new Context {
     before {
       ps = new InMemoryPhotoService
@@ -98,6 +109,19 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
         val date = p.createDate.take(10).split('-').toList.map(_.toInt)
         ps.getPhotosByDate(date).exists(_(p.id)) && ps.getPhotosByDate(List(date.head, date.tail.head)).exists(_(p.id)) && ps.getPhotosByDate(List(date.head)).exists(_(p.id))
       }} must pass
+      ps.countPhotos must_== ps.getPhotosByDate(Nil).map(_.size)      
+    }
+  }
+
+  "reindexing" ->- fullNoIndexes should {
+    "return indexed values" in {
+      ps.registerIndex(new InMemoryPhotoDateIndex)
+      Prop.forAll{p: Photo =>
+        ps.setPhoto(p)
+        val date = p.createDate.take(10).split('-').toList.map(_.toInt)
+        ps.getPhotosByDate(date).exists(_(p.id)) && ps.getPhotosByDate(List(date.head, date.tail.head)).exists(_(p.id)) && ps.getPhotosByDate(List(date.head)).exists(_(p.id))
+      } must pass
+      ps.countPhotos must_== ps.getPhotosByDate(Nil).map(_.size)
     }
   }
 

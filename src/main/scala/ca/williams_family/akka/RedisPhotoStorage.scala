@@ -25,5 +25,8 @@ class RedisPhotoStorage extends PhotoStorage with RedisHelpers {
   def put(k: K, v: V): Unit = photos.put(k, v)
 
   def size: Int = photos.size
+
+  def keys: Iterable[K] = atomic { photos.keysIterator.map(asString).toList }
+
 }
 

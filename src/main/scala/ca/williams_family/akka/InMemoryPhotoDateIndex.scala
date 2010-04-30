@@ -27,7 +27,15 @@ class InMemoryPhotoDateIndex extends PhotoDateIndex {
       case Some(a) => a forward GetPhotosByDate(rest)
       case _ => reply(empty)
     }
-    case GetPhotosByDate(Nil) => error("Return all photo ids by date")
+    case GetPhotosByDate(Nil) =>
+      Actor.spawn{
+        reply(years.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
+          case (s, f) => {
+            f.await
+            f.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
+          }
+        })
+      }
     case SetPhoto(p,_) =>
       p.createDate.take(10).split('-').toList.map(_.toInt) match {
         case year :: rest => {

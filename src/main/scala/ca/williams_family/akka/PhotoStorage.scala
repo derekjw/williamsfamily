@@ -16,6 +16,7 @@ trait PhotoStorage extends Actor {
 
   def receive = {
     case CountPhotos => reply(size)
+    case GetPhotoIds => reply(keys)
     case msg @ SetPhoto(photo, None) => photoSerializer forward msg
     case SetPhoto(photo, Some(json)) => {
       setPhoto(photo, json)
@@ -32,6 +33,8 @@ trait PhotoStorage extends Actor {
   def put(k: K, v: V): Unit
 
   def size: Int
+
+  def keys: Iterable[K]
 
   def setPhoto(photo: Photo, v: V): Unit = put(photo.id, v)
 
