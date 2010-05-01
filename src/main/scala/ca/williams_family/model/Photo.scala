@@ -1,6 +1,8 @@
 package ca.williams_family
 package model
 
+import akka._
+
 import net.liftweb.common._
 import net.liftweb.json._
 import JsonAST._
@@ -12,6 +14,14 @@ import org.apache.commons.math.util.MathUtils
 case class Photo(id: String, createDate: String, exposure: Rational, aperature: Rational, iso: Int, focalLength: Rational, width: Int, height: Int, images: Map[String, Image])
 
 object Photo {
+  private var photoService: Box[PhotoService] = Failure("Photo service not set")
+
+  def service = photoService
+
+  def service_=(ps: PhotoService): Unit = photoService = Full(ps)
+
+  def withService[T](f: (PhotoService) => T): Option[T] = photoService.map(f)
+
   def serialize(in: Photo) = {
     implicit val formats = DefaultFormats
     write(in)

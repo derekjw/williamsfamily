@@ -23,7 +23,7 @@ abstract class PhotoService extends Actor {
 
   val storage: PhotoStorage
 
-  var indexes: Set[PhotoIndex] = Set()
+  private var indexes: Set[PhotoIndex] = Set()
 
   def registerIndex(index: PhotoIndex) { registerIndex(List(index)) }
 

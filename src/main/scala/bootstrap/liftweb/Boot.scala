@@ -45,16 +45,33 @@ class Boot extends Logger {
     // where to search snippet
     addToPackages("ca.williams_family")
 
-    val photoService = new akka.PhotoService with akka.RedisPhotoStorageFactory
+    Photo.service = new akka.PhotoService with akka.RedisPhotoStorageFactory
 
-    photoService.start
+    Photo.withService{ps =>
+      ps.start
+      ps.registerIndex(new akka.InMemoryPhotoDateIndex)
+    }
 
-    photoService.registerIndex(new akka.InMemoryPhotoDateIndex)
+    rewrite.prepend {
+      case
+        RewriteRequest(
+          ParsePath("timeline" :: year :: month :: Nil, _, _, _), _, _) =>
+        RewriteResponse(
+          ParsePath("timeline-photos" :: Nil, "html", false, false),
+          Map("year" -> year, "month" -> month))
+      case
+        RewriteRequest(
+          ParsePath("photos" :: id :: Nil, _, _, _), _, _) =>
+        RewriteResponse(
+          ParsePath("photo" :: Nil, "html", false, false),
+          Map("id" -> id))
+    }
 
     // Build SiteMap
     val entries =
       Menu(Loc("Home", List("index"), "Home")) ::
       Menu(Loc("Location", List("location"), "Location", Hidden)) :: 
+      Menu(Loc("Photo", List("photo"), "Photo", Hidden)) ::
       Nil
     setSiteMap(SiteMap(entries:_*))
   }
