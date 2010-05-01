@@ -12,7 +12,7 @@ import org.scalacheck._
 
 import scala.collection.SortedSet
 
-import se.scalablesolutions.akka.actor.ActorRegistry
+import se.scalablesolutions.akka.actor.{Actor,ActorRegistry}
 import se.scalablesolutions.akka.dispatch.Futures._
 
 import net.liftweb.common._
@@ -104,11 +104,14 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
   "photo date index" ->- fullNonBlocking should {
     "return ids of inserted photos" in {
       Prop.forAll{p: Photo => {
-        ps.setPhoto(p)
+        ps.setPhoto(p).awaitBlocking
         val date = p.createDate.take(10).split('-').toList.map(_.toInt)
         ps.getPhotosByDate(date).exists(_(p.id)) && ps.getPhotosByDate(List(date.head, date.tail.head)).exists(_(p.id)) && ps.getPhotosByDate(List(date.head)).exists(_(p.id))
       }} must pass
-      ps.countPhotos must_== ps.getPhotosByDate(Nil).map(_.size)      
+      ps.countPhotos must_== ps.getPhotosByDate(Nil).map(_.size)
+      var pIds = Set[String]()
+      awaitAll((1 to 10000).flatMap(i => genPhoto.sample.map{p => pIds += p.id; ps.setPhoto(p)}).toList)
+      logTime("Get "+pIds.size+" photos")(pIds.map(pId => ps.getPhoto(pId))).foreach(_ must beFull)
     }
   }
 

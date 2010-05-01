@@ -15,21 +15,30 @@ trait PhotoStorage extends Actor {
   startLink(photoSerializer)
 
   def receive = {
-    case CountPhotos => reply(size)
-    case GetPhotoIds => reply(keys)
-    case msg @ SetPhoto(photo, None) => photoSerializer forward msg
-    case SetPhoto(photo, Some(json)) => {
+    case CountPhotos =>
+      reply(size)
+
+    case GetPhotoIds =>
+      reply(keys)
+
+    case msg @ SetPhoto(photo, None) =>
+      photoSerializer forward msg
+
+    case SetPhoto(photo, Some(json)) =>
       setPhoto(photo, json)
       reply(true)
-    }
-    case GetPhoto(id) => getPhoto(id) match {
-      case Some(p) => photoSerializer forward SerializedPhoto(p)
-      case _ =>reply(None)
-    }
-    case ForEachPhoto(f) => Actor.spawn{
-      foreach(v => f(Photo.deserialize(v)))
-      reply(true)
-    }
+
+    case GetPhoto(id) =>
+      getPhoto(id) match {
+        case Some(p) => photoSerializer forward SerializedPhoto(p)
+        case _ =>reply(None)
+      }
+
+    case ForEachPhoto(f) =>
+      Actor.spawn {
+        foreach(v => f(Photo.deserialize(v)))
+        reply(true)
+      }
   }
 
   def get(k: K): Option[V]

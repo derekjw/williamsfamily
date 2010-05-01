@@ -16,9 +16,9 @@ import se.scalablesolutions.akka.stm.Transaction.Local._
 import se.scalablesolutions.akka.config.ScalaConfig._
 
 class InMemoryPhotoDateIndex extends PhotoDateIndex {
-  val empty = SortedSet[String]()
-
   lifeCycle = Some(LifeCycle(Permanent))
+
+  val empty = SortedSet[String]()
 
   private var years = SortedMap[Int, Actor]()
 
@@ -31,7 +31,7 @@ class InMemoryPhotoDateIndex extends PhotoDateIndex {
       Actor.spawn{
         reply(years.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
           case (s, f) => {
-            f.await
+            f.awaitBlocking
             f.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
           }
         })
@@ -73,7 +73,7 @@ class InMemoryPhotoDateIndex extends PhotoDateIndex {
         Actor.spawn{
           reply(months.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
             case (s, f) => {
-              f.await
+              f.awaitBlocking
               f.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
             }
           })
@@ -109,7 +109,7 @@ class InMemoryPhotoDateIndex extends PhotoDateIndex {
           Actor.spawn{
             reply(days.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
               case (s, f) => {
-                f.await
+                f.awaitBlocking
                 f.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
               }
             })
