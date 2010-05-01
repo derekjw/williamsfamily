@@ -15,5 +15,6 @@ class PhotoSerializer(supervisor: Actor) extends Actor {
     case SetPhoto(photo,None) => {
       supervisor forward SetPhoto(photo,Some(Photo.serialize(photo)))
     }
+    //case (json: String, WithPhoto(f)) => f(Photo.deserialize(json))
   }
 }

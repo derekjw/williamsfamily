@@ -35,14 +35,18 @@ abstract class PhotoService extends Actor {
     reIndex(index)
   }
 
-  def reIndex(index: Iterable[PhotoIndex]) {
-    logTime("Getting all photo ids for indexing")((this !! GetPhotoIds) ?~ "Timed out").asA[List[String]].getOrElse(Nil).map(i => this !!! GetPhoto(i)).foreach{f =>
+  def reIndexOld(index: Iterable[PhotoIndex]) {
+    logTime("ReIndexing photos")(((this !! GetPhotoIds) ?~ "Timed out").asA[List[String]].getOrElse(Nil).map(i => this !!! GetPhoto(i)).foreach{f =>
       f.awaitBlocking
       for {
         photo <- f.result.asA[Photo]
         idx <- index
       } {idx ! SetPhoto(photo)}
-    }
+    })
+  }
+
+  def reIndex(index: Iterable[PhotoIndex]) {
+    logTime("ReIndexing photos")((this !!! ForEachPhoto(p => index.foreach(_ ! SetPhoto(p)))).awaitBlocking)
   }
 
   def countPhotos = ((this !! CountPhotos) ?~ "Timed out").asA[java.lang.Integer].map(_.intValue)
@@ -61,6 +65,7 @@ abstract class PhotoService extends Actor {
 
   def receive = {
     case CountPhotos => storage forward CountPhotos
+    case msg: ForEachPhoto => storage forward msg
     case GetPhotoIds => storage forward GetPhotoIds
     case msg: SetPhoto => {
       storage forward msg

@@ -14,3 +14,5 @@ case class GetPhotosByDate(date: List[Int]) extends Message
 case class SetPhotoDateIndex(photo: Photo, date: List[Int]) extends Message
 case class RegisterPhotoIndex(index: PhotoIndex) extends Message
 case class SerializedPhoto(json: String) extends Message
+case class ForEachPhoto(fun: (Photo) => Unit) extends Message
+case class WithPhoto(fun: (Photo) => Unit) extends Message

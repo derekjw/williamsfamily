@@ -28,5 +28,6 @@ class InMemoryPhotoStorage extends PhotoStorage {
 
   def keys: Iterable[K] = atomic { photos.keysIterator.toList }
 
+  def foreach(f: (V) => Unit) = atomic { photos.valuesIterator.foreach(f) }
 }
 

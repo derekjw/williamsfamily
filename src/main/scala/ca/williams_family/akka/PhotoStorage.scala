@@ -26,6 +26,10 @@ trait PhotoStorage extends Actor {
       case Some(p) => photoSerializer forward SerializedPhoto(p)
       case _ =>reply(None)
     }
+    case ForEachPhoto(f) => Actor.spawn{
+      foreach(v => f(Photo.deserialize(v)))
+      reply(true)
+    }
   }
 
   def get(k: K): Option[V]
@@ -35,6 +39,8 @@ trait PhotoStorage extends Actor {
   def size: Int
 
   def keys: Iterable[K]
+
+  def foreach(f: (V) => Unit): Unit
 
   def setPhoto(photo: Photo, v: V): Unit = put(photo.id, v)
 
