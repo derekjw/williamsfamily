@@ -79,7 +79,6 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
     before {
       ps = new InMemoryPhotoService
       ps.start
-      ps.registerIndex(new InMemoryPhotoDateIndex)
       val dir = new File("output")
       val filter = new FileFilter() { def accept(file: File): Boolean = { file.getName.endsWith(".json") } }
       logTime("Loading production photos")(awaitAll(dir.listFiles(filter).toList.map(f => ps.setPhoto(Photo.deserialize(new String(readWholeFile(f), "UTF-8"))))))
@@ -127,7 +126,9 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
 
 /*  "production photos" ->- production should {
     "have proper count" in {
+      ps.registerIndex(new InMemoryPhotoDateIndex)
       ps.countPhotos must beFull.which(_ must_== 17454)
+      logTime("Getting index for all photos")(ps.getPhotosByDate(Nil)) must beFull.which(_.size must_== 17454)
       logTime("Getting index for year")(ps.getPhotosByDate(List(2009))) must beFull.which(_.size must_== 3917)
       logTime("Getting index for month")(ps.getPhotosByDate(List(2009,12))) must beFull.which(_.size must_== 247)
       logTime("Getting index for day")(ps.getPhotosByDate(List(2009,12,25))) must beFull.which(_.size must_== 157)
