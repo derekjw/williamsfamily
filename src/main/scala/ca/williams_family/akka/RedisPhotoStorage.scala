@@ -20,11 +20,11 @@ class RedisPhotoStorage extends PhotoStorage with RedisHelpers {
 
   private val photos = atomic { RedisStorage.getMap("photos") }
 
-  def get(k: K): Option[V] = photos.get(k).map(asString)
+  def get(k: K): Option[V] = atomic { photos.get(k).map(asString) }
 
-  def put(k: K, v: V): Unit = photos.put(k, v)
+  def put(k: K, v: V): Unit = atomic { photos.put(k, v) }
 
-  def size: Int = photos.size
+  def size: Int = atomic { photos.size }
 
   def keys: Iterable[K] = atomic { photos.keysIterator.map(asString).toList }
 

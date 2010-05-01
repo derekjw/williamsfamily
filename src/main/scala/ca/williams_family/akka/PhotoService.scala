@@ -5,6 +5,7 @@ import collection.SortedSet
 
 import net.liftweb.common._
 import Box._
+import net.liftweb.util.Helpers._
 
 import model._
 
@@ -35,10 +36,10 @@ abstract class PhotoService extends Actor {
   }
 
   def reIndex(index: Iterable[PhotoIndex]) {
-    ((this !! GetPhotoIds) ?~ "Timed out").asA[List[String]].getOrElse(Nil).map(i => this !!! GetPhoto(i)).foreach{f =>
-      f.await
+    logTime("Getting all photo ids for indexing")((this !! GetPhotoIds) ?~ "Timed out").asA[List[String]].getOrElse(Nil).map(i => this !!! GetPhoto(i)).foreach{f =>
+      f.awaitBlocking
       for {
-        photo <- Box(f.result).asA[Photo]
+        photo <- f.result.asA[Photo]
         idx <- index
       } {idx ! SetPhoto(photo)}
     }

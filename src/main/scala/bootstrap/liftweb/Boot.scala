@@ -49,7 +49,7 @@ class Boot extends Logger {
 
     photoService.start
 
-    photoService.registerIndex(new akka.InMemoryPhotoDateIndex)
+    logTime("Reindexing")(photoService.registerIndex(new akka.InMemoryPhotoDateIndex))
 
     // Build SiteMap
     val entries =
