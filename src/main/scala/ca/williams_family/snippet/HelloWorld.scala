@@ -36,7 +36,7 @@ class HelloWorld {
       query <- List("testid", "testid", "failedlookup", "testid")
       photo <- photos.getPhoto(query)
     } yield {
-      bind("b", in, "time" -> photo.createDate)
+      bind("b", in, "time" -> photo.createDate.mkString)
     }
 
   implicit def unboxNodeSeq(in: Box[NodeSeq]): NodeSeq = in match {

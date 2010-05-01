@@ -5,7 +5,7 @@ package specs
 import org.scalacheck._
 
 import java.util.Date
-import java.util.Calendar
+import java.util.{Calendar => C}
 import java.text.SimpleDateFormat
 
 import Gen._
@@ -34,13 +34,16 @@ object Generators {
   val isoDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
   val idDateFormat = new SimpleDateFormat("yyyyMMdd-HHmmss00")
 
-  def genPhotoDate: Gen[Date] = {
-    val cal = Calendar.getInstance
+  def genPhotoDate: Gen[List[Int]] = {
+    val cal = C.getInstance
     cal.set(2000,1,1)
     val calstart = cal.getTimeInMillis
     cal.set(2010,1,1)
     val calend = cal.getTimeInMillis
-    Gen.choose(calstart,calend).map{i => cal.setTimeInMillis(i); cal.getTime}
+    Gen.choose(calstart,calend).map{i =>
+      cal.setTimeInMillis(i)
+      List(C.YEAR, C.MONTH, C.DATE, C.HOUR_OF_DAY, C.MINUTE, C.SECOND, C.MILLISECOND).map(cal.get)
+    }
   }
 
   def genIdHash: Gen[String] = {
@@ -56,7 +59,7 @@ object Generators {
     fo <- arbitrary[Rational]
     he <- Gen.choose(1000,10000)
     wi <- Gen.choose(1000,10000)
-  } yield Photo(idDateFormat.format(da)+"-"+id, isoDateFormat.format(da), ex, ap, is, fo, he, wi, Map())
+  } yield Photo(Photo.mkId(da,id), da, ex, ap, is, fo, he, wi, Map())
 
   implicit def arbPhoto: Arbitrary[Photo] = {
     Arbitrary { genPhoto }

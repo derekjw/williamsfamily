@@ -105,7 +105,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
     "return ids of inserted photos" in {
       Prop.forAll{p: Photo => {
         ps.setPhoto(p).awaitBlocking
-        val date = p.createDate.take(10).split('-').toList.map(_.toInt)
+        val date = p.createDate.take(3)
         ps.getPhotosByDate(date).exists(_(p.id)) && ps.getPhotosByDate(List(date.head, date.tail.head)).exists(_(p.id)) && ps.getPhotosByDate(List(date.head)).exists(_(p.id))
       }} must pass
       ps.countPhotos must_== ps.getPhotosByDate(Nil).map(_.size)
@@ -120,7 +120,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       ps.registerIndex(new InMemoryPhotoDateIndex)
       Prop.forAll{p: Photo =>
         ps.setPhoto(p)
-        val date = p.createDate.take(10).split('-').toList.map(_.toInt)
+        val date = p.createDate.take(3)
         ps.getPhotosByDate(date).exists(_(p.id)) && ps.getPhotosByDate(List(date.head, date.tail.head)).exists(_(p.id)) && ps.getPhotosByDate(List(date.head)).exists(_(p.id))
       } must pass
       ps.countPhotos must_== ps.getPhotosByDate(Nil).map(_.size)

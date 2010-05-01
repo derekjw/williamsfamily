@@ -52,7 +52,7 @@ class Boot extends Logger {
       ps.registerIndex(new akka.InMemoryPhotoDateIndex)
     }
 
-    rewrite.prepend {
+    statefulRewrite.prepend {
       case
         RewriteRequest(
           ParsePath("timeline" :: year :: month :: Nil, _, _, _), _, _) =>

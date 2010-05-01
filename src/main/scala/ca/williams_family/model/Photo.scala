@@ -11,7 +11,7 @@ import JsonParser._
 import Serialization.{read, write}
 import org.apache.commons.math.util.MathUtils
 
-case class Photo(id: String, createDate: String, exposure: Rational, aperature: Rational, iso: Int, focalLength: Rational, width: Int, height: Int, images: Map[String, Image])
+case class Photo(id: String, createDate: List[Int], exposure: Rational, aperature: Rational, iso: Int, focalLength: Rational, width: Int, height: Int, images: Map[String, Image])
 
 object Photo {
   private var photoService: Box[PhotoService] = Failure("Photo service not set")
@@ -26,10 +26,17 @@ object Photo {
     implicit val formats = DefaultFormats
     write(in)
   }
+
   def deserialize(in: String) = {
     implicit val formats = DefaultFormats
     read[Photo](in)
   }
+
+  def mkId(date: List[Int], hash: String) = date match {
+    case year :: month :: day :: hour :: minute :: second :: msecond :: rest =>
+      "%4d%2d%2d-%2d%2d%2d%2d-%s".format(year, month, day, hour, minute, second, msecond, hash)
+  }
+
 }
 
 case class Image(fileName: String, fileSize: Int, hash: String, width: Int, height: Int)

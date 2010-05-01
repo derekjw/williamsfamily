@@ -37,7 +37,7 @@ class InMemoryPhotoDateIndex extends PhotoDateIndex {
         })
       }
     case SetPhoto(p,_) =>
-      p.createDate.take(10).split('-').toList.map(_.toInt) match {
+      p.createDate match {
         case year :: rest => {
           years.get(year).getOrElse{
             val a = new YearIndex(year)
