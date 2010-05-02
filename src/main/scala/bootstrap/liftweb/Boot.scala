@@ -10,10 +10,9 @@ import net.liftweb.sitemap._
 import net.liftweb.sitemap.Loc._
 import Helpers._
 
-import se.scalablesolutions.akka.actor.{SupervisorFactory, Actor}
+import se.scalablesolutions.akka.actor._
+import se.scalablesolutions.akka.dispatch.Futures._
 import se.scalablesolutions.akka.config.ScalaConfig._
-import se.scalablesolutions.akka.util.Logging
-import se.scalablesolutions.akka.actor.ActorRegistry
 
 import ca.williams_family._
 import model._
@@ -45,11 +44,14 @@ class Boot extends Logger {
     // where to search snippet
     addToPackages("ca.williams_family")
 
-    Photo.service = new akka.PhotoService with akka.RedisPhotoStorageFactory
+    Photo.service = new akka.PhotoService with akka.InMemoryPhotoStorageFactory
 
     Photo.withService{ps =>
       ps.start
       ps.registerIndex(new akka.InMemoryPhotoDateIndex)
+      val dir = new java.io.File("output")
+      val filter = new java.io.FileFilter() { def accept(file: java.io.File): Boolean = { file.getName.endsWith(".json") } }
+      logTime("Loading production photos")(awaitAll(dir.listFiles(filter).toList.map(f => ps.setPhoto(Photo.deserialize(new String(readWholeFile(f), "UTF-8"))))))
     }
 
     statefulRewrite.prepend {
