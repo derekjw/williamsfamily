@@ -51,7 +51,7 @@ abstract class PhotoService extends Actor {
 
   def countPhotos = ((this !! CountPhotos) ?~ "Timed out").asA[java.lang.Integer].map(_.intValue)
 
-  def setPhoto(photo: Photo): Future = this !!! SetPhoto(photo)
+  def setPhoto(photo: Photo): Future[Boolean] = this !!! SetPhoto(photo)
 
   def getPhoto(id: String) =
     for {

@@ -15,7 +15,7 @@ trait RedisPhotoStorageFactory {
   val storage: PhotoStorage = spawnLink[RedisPhotoStorage]
 }
 
-class RedisPhotoStorage extends StringPhotoStorage with RedisHelpers {
+class RedisPhotoStorage extends PhotoStorage with RedisHelpers {
   lifeCycle = Some(LifeCycle(Permanent))
 
   private val photos = atomic { RedisStorage.getMap("photos") }

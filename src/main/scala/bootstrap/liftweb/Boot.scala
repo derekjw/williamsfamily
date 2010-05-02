@@ -76,6 +76,11 @@ class Boot extends Logger {
       Menu(Loc("Photo", List("photo"), "Photo", Hidden)) ::
       Nil
     setSiteMap(SiteMap(entries:_*))
+
+    unloadHooks.append { () =>
+      Photo.service.map(_.stop)
+    }
   }
+
 }
 

@@ -12,9 +12,9 @@ class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info)
       <dependency org="net.liftweb" name="lift-json" rev="2.0-scala280-SNAPSHOT"><exclude module="log4j"/><exclude module="slf4j-log4j12"/></dependency>
     </dependencies>
 
-  val akkaMongo = "se.scalablesolutions.akka" %% "akka-persistence-mongo"  % "0.8.1" % "compile"
-  val akkaRedis = "se.scalablesolutions.akka" %% "akka-persistence-redis"  % "0.8.1" % "compile"
-  val akkaPatterns = "se.scalablesolutions.akka" %% "akka-patterns"  % "0.8.1" % "compile"
+  val akkaMongo = "se.scalablesolutions.akka" %% "akka-persistence-mongo"  % "0.9-SNAPSHOT" % "compile"
+  val akkaRedis = "se.scalablesolutions.akka" %% "akka-persistence-redis"  % "0.9-SNAPSHOT" % "compile"
+  val akkaPatterns = "se.scalablesolutions.akka" %% "akka-patterns"  % "0.9-SNAPSHOT" % "compile"
 
   val apacheMath = "org.apache.commons" % "commons-math" % "2.1"
 
@@ -34,6 +34,8 @@ class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info)
   override def scanDirectories = Nil
 
   override def repositories = Set(
+    "Codehaus" at "http://repository.codehaus.org",
+    "Codehaus Snapshots" at "http://snapshots.repository.codehaus.org",
     "jBoss" at "http://repository.jboss.org/maven2",
     "Multiverse Releases" at "http://multiverse.googlecode.com/svn/maven-repository/releases/",
     "GuiceyFruit" at "http://guiceyfruit.googlecode.com/svn/repo/releases/",
