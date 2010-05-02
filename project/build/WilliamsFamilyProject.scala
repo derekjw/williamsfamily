@@ -12,6 +12,7 @@ class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info)
       <dependency org="net.liftweb" name="lift-json" rev="2.0-scala280-SNAPSHOT"><exclude module="log4j"/><exclude module="slf4j-log4j12"/></dependency>
     </dependencies>
 
+  val akkaMongo = "se.scalablesolutions.akka" %% "akka-persistence-mongo"  % "0.8.1" % "compile"
   val akkaRedis = "se.scalablesolutions.akka" %% "akka-persistence-redis"  % "0.8.1" % "compile"
   val akkaPatterns = "se.scalablesolutions.akka" %% "akka-patterns"  % "0.8.1" % "compile"
 

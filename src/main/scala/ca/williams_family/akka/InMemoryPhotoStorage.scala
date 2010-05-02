@@ -15,7 +15,7 @@ trait InMemoryPhotoStorageFactory {
   val storage: PhotoStorage = spawnLink[InMemoryPhotoStorage]
 }
 
-class InMemoryPhotoStorage extends PhotoStorage {
+class InMemoryPhotoStorage extends StringPhotoStorage {
   lifeCycle = Some(LifeCycle(Permanent))
 
   private val photos = atomic { TransactionalState.newMap[K, V] }
