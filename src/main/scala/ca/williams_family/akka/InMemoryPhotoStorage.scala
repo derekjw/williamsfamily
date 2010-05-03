@@ -7,7 +7,7 @@ import model._
 
 import se.scalablesolutions.akka.actor._
 import se.scalablesolutions.akka.stm._
-import se.scalablesolutions.akka.stm.Transaction.Local._
+import Transaction.Global._
 import se.scalablesolutions.akka.config.ScalaConfig._
 
 trait InMemoryPhotoStorageFactory {
@@ -15,10 +15,10 @@ trait InMemoryPhotoStorageFactory {
   val storage: PhotoStorage = spawnLink[InMemoryPhotoStorage]
 }
 
-class InMemoryPhotoStorage extends StringPhotoStorage {
+class InMemoryPhotoStorage extends PhotoStorage {
   lifeCycle = Some(LifeCycle(Permanent))
 
-  private val photos = atomic { TransactionalState.newMap[K, V] }
+  private val photos = TransactionalState.newMap[K, V]
 
   def get(k: K): Option[V] = atomic { photos.get(k) }
 

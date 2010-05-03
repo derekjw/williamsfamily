@@ -7,7 +7,8 @@ import Box._
 import model._
 
 import se.scalablesolutions.akka.actor._
-import se.scalablesolutions.akka.stm.Transaction.Local._
+import se.scalablesolutions.akka.stm.._
+import Transaction.Global._
 import se.scalablesolutions.akka.persistence.mongo.MongoStorage
 import se.scalablesolutions.akka.config.ScalaConfig._
 
@@ -19,7 +20,7 @@ trait MongoPhotoStorageFactory {
 class MongoPhotoStorage extends PhotoStorage {
   lifeCycle = Some(LifeCycle(Permanent))
 
-  private val photos = atomic { MongoStorage.getMap("photos") }
+  private val photos = MongoStorage.getMap("photos")
 
   def get(k: K): Option[V] = atomic { photos.get(k).asA[String] }
 

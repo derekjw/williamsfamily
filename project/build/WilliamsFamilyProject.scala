@@ -14,7 +14,6 @@ class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info)
 
   val akkaMongo = "se.scalablesolutions.akka" %% "akka-persistence-mongo"  % "0.9-SNAPSHOT" % "compile"
   val akkaRedis = "se.scalablesolutions.akka" %% "akka-persistence-redis"  % "0.9-SNAPSHOT" % "compile"
-  val akkaPatterns = "se.scalablesolutions.akka" %% "akka-patterns"  % "0.9-SNAPSHOT" % "compile"
 
   val apacheMath = "org.apache.commons" % "commons-math" % "2.1"
 
