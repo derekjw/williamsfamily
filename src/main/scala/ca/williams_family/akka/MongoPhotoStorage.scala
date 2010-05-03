@@ -7,7 +7,7 @@ import Box._
 import model._
 
 import se.scalablesolutions.akka.actor._
-import se.scalablesolutions.akka.stm.._
+import se.scalablesolutions.akka.stm._
 import Transaction.Global._
 import se.scalablesolutions.akka.persistence.mongo.MongoStorage
 import se.scalablesolutions.akka.config.ScalaConfig._
