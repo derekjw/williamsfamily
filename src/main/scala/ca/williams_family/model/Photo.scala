@@ -34,7 +34,7 @@ object Photo {
 
   def mkId(date: List[Int], hash: String) = date match {
     case year :: month :: day :: hour :: minute :: second :: msecond :: rest =>
-      "%4d%2d%2d-%2d%2d%2d%2d-%s".format(year, month, day, hour, minute, second, msecond, hash)
+      "%04d%02d%02d-%02d%02d%02d%02d-%s".format(year, month, day, hour, minute, second, msecond, hash)
   }
 
 }

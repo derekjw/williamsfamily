@@ -12,7 +12,7 @@ import collection.immutable.TreeSet
 
 import se.scalablesolutions.akka.actor._
 import se.scalablesolutions.akka.stm._
-import se.scalablesolutions.akka.stm.Transaction.Local._
+import se.scalablesolutions.akka.stm.Transaction.Global._
 import se.scalablesolutions.akka.config.ScalaConfig._
 
 class InMemoryPhotoDateIndex extends PhotoDateIndex {
@@ -36,7 +36,7 @@ class InMemoryPhotoDateIndex extends PhotoDateIndex {
           }
         })
       }
-    case SetPhoto(p,_) =>
+    case SetPhoto(p) =>
       p.createDate match {
         case year :: rest => {
           years.get(year).getOrElse{
@@ -135,11 +135,11 @@ class InMemoryPhotoDateIndex extends PhotoDateIndex {
 
         lifeCycle = Some(LifeCycle(Permanent))
 
-        private var index = empty
+        private lazy val index = TransactionalState.newRef(empty)
 
         def receive = {
-          case GetPhotosByDate(Nil) => reply(index)
-          case SetPhotoDateIndex(p,_) => index += p.id
+          case GetPhotosByDate(Nil) => reply(atomic { index.getOrElse(empty) })
+          case SetPhotoDateIndex(p,_) => atomic { index.alter(_ + p.id) }
         }
       }
     }

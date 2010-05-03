@@ -44,14 +44,16 @@ class Boot extends Logger {
     // where to search snippet
     addToPackages("ca.williams_family")
 
-    Photo.service = new akka.PhotoService with akka.InMemoryPhotoStorageFactory
+    Photo.service = new akka.PhotoService with akka.RedisPhotoStorageFactory
 
     Photo.withService{ps =>
       ps.start
+      info("Photo count: "+ps.countPhotos)
       ps.registerIndex(new akka.InMemoryPhotoDateIndex)
-      val dir = new java.io.File("output")
-      val filter = new java.io.FileFilter() { def accept(file: java.io.File): Boolean = { file.getName.endsWith(".json") } }
-      logTime("Loading production photos")(awaitAll(dir.listFiles(filter).toList.map(f => ps.setPhoto(Photo.deserialize(new String(readWholeFile(f), "UTF-8"))))))
+      info("Photos indexed: "+logTime("Getting all from index")(ps.getPhotosByDate(Nil).map(_.size)))
+      //val dir = new java.io.File("output")
+      //val filter = new java.io.FileFilter() { def accept(file: java.io.File): Boolean = { file.getName.endsWith(".json") } }
+      //logTime("Loading production photos")(dir.listFiles(filter).toList.map(f => ps.setPhoto(Photo.deserialize(new String(readWholeFile(f), "UTF-8")))))
     }
 
     statefulRewrite.prepend {

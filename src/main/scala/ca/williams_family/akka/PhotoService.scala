@@ -17,7 +17,7 @@ import se.scalablesolutions.akka.config._
 
 import net.liftweb.json._
 
-abstract class PhotoService extends Actor {
+abstract class PhotoService extends Actor with Logger {
   faultHandler = Some(OneForOneStrategy(5, 5000))
   trapExit = List(classOf[Exception])
 
@@ -35,18 +35,13 @@ abstract class PhotoService extends Actor {
     reIndex(index)
   }
 
-  def reIndexOld(index: Iterable[PhotoIndex]) {
-    logTime("ReIndexing photos")(((this !! GetPhotoIds) ?~ "Timed out").asA[List[String]].getOrElse(Nil).map(i => this !!! GetPhoto(i)).foreach{f =>
-      f.awaitBlocking
+  def reIndex(index: Iterable[PhotoIndex]) {
+    logTime("ReIndexing photos")(((this !! GetPhotoIds) ?~ "Timed out").asA[List[String]].getOrElse(Nil).foreach{pId =>
       for {
-        photo <- f.result.asA[Photo]
+        photo <- getPhoto(pId)
         idx <- index
       } {idx ! SetPhoto(photo)}
     })
-  }
-
-  def reIndex(index: Iterable[PhotoIndex]) {
-    logTime("ReIndexing photos")((this !!! ForEachPhoto(p => index.foreach(_ ! SetPhoto(p)))).awaitBlocking)
   }
 
   def countPhotos = ((this !! CountPhotos) ?~ "Timed out").asA[java.lang.Integer].map(_.intValue)
@@ -55,7 +50,8 @@ abstract class PhotoService extends Actor {
 
   def getPhoto(id: String) =
     for {
-      photo <- ((this !! GetPhoto(id)) ?~ "Timed out" ~> 500).asA[Photo] ?~ "Photo Not Found" ~> 404
+      res <- ((this !! GetPhoto(id)) ?~ "Timed out" ~> 500).asA[Option[Photo]]
+      photo <-res ?~ "Photo Not Found" ~> 404
     } yield photo
 
   def getPhotosByDate(key: List[Int]): Box[SortedSet[String]] =

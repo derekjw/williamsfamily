@@ -19,7 +19,7 @@ trait RedisPhotoStorageFactory {
 class RedisPhotoStorage extends PhotoStorage with RedisHelpers {
   lifeCycle = Some(LifeCycle(Permanent))
 
-  private val photos = RedisStorage.getMap("photos")
+  private var photos = RedisStorage.getMap("photos")
 
   def get(k: K): Option[V] = atomic { photos.get(k).map(asString) }
 
@@ -30,6 +30,9 @@ class RedisPhotoStorage extends PhotoStorage with RedisHelpers {
   def keys: Iterable[K] = atomic { photos.keysIterator.map(asString).toList }
 
   def foreach(f: (V) => Unit) = atomic { photos.valuesIterator.map(asString).foreach(f) }
+
+  override def postRestart(reason: Throwable) =
+    photos = RedisStorage.getMap("photos")
 
 }
 

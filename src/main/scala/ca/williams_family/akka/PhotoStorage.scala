@@ -1,7 +1,7 @@
 package ca.williams_family
 package akka
 
-import net.liftweb.common.Box
+import net.liftweb.common._
 import Box._
 import model._
 
@@ -11,9 +11,6 @@ trait PhotoStorage extends Actor {
   type V = String
   type K = String
 
-  val photoSerializer = new PhotoSerializer(this)
-  startLink(photoSerializer)
-
   def receive = {
     case CountPhotos =>
       reply(size)
@@ -21,24 +18,15 @@ trait PhotoStorage extends Actor {
     case GetPhotoIds =>
       reply(keys)
 
-    case msg @ SetPhoto(photo, None) =>
-      photoSerializer forward msg
-
-    case SetPhoto(photo, Some(json)) =>
-      setPhoto(photo, json)
+    case SetPhoto(photo) =>
+      setPhoto(photo, Photo.serialize(photo))
       reply(true)
 
     case GetPhoto(id) =>
-      getPhoto(id) match {
-        case Some(p) => photoSerializer forward SerializedPhoto(p)
-        case _ =>reply(None)
-      }
+      reply(getPhoto(id).map(Photo.deserialize))
 
     case ForEachPhoto(f) =>
-      Actor.spawn {
-        foreach(v => f(Photo.deserialize(v)))
-        reply(true)
-      }
+      foreach(v => f(Photo.deserialize(v)))
   }
 
   def get(k: K): Option[V]
@@ -55,8 +43,4 @@ trait PhotoStorage extends Actor {
 
   def getPhoto(k: K): Option[V] = get(k)
 
-  override def shutdown = {
-    unlink(photoSerializer)
-    photoSerializer.stop
-  }
 }
