@@ -28,14 +28,9 @@ class InMemoryPhotoDateIndex extends PhotoDateIndex {
       case _ => reply(empty)
     }
     case GetPhotosByDate(Nil) =>
-      Actor.spawn{
-        reply(years.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
-          case (s, f) => {
-            f.awaitBlocking
-            f.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
-          }
-        })
-      }
+      reply(years.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
+        case (s, f) => f.awaitBlocking.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
+      })
     case SetPhoto(p) =>
       p.createDate match {
         case year :: rest => {
@@ -70,14 +65,9 @@ class InMemoryPhotoDateIndex extends PhotoDateIndex {
         case _ => reply(empty)
       }
       case GetPhotosByDate(Nil) =>
-        Actor.spawn{
-          reply(months.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
-            case (s, f) => {
-              f.awaitBlocking
-              f.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
-            }
-          })
-        }
+        reply(months.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
+          case (s, f) => f.awaitBlocking.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
+        })
       case SetPhotoDateIndex(p, month :: rest) => months.get(month).getOrElse{
         val a = new MonthIndex(year, month)
         startLink(a)
@@ -106,14 +96,9 @@ class InMemoryPhotoDateIndex extends PhotoDateIndex {
           case _ => reply(empty)
         }
         case GetPhotosByDate(Nil) =>
-          Actor.spawn{
-            reply(days.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
-              case (s, f) => {
-                f.awaitBlocking
-                f.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
-              }
-            })
-          }
+          reply(days.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
+            case (s, f) => f.awaitBlocking.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
+          })
         case SetPhotoDateIndex(p, day :: rest)  => days.get(day).getOrElse{
           val a = new DayIndex(year, month, day)
           startLink(a)
@@ -131,11 +116,11 @@ class InMemoryPhotoDateIndex extends PhotoDateIndex {
       }
 
       class DayIndex(year: Int, month: Int, day: Int) extends Actor {
-        id = "PhotoDateIndex "+year+"-"+month+"-"+day
+        id = "PhotoDateIndex:"+year+"-"+month+"-"+day
 
         lifeCycle = Some(LifeCycle(Permanent))
 
-        private lazy val index = TransactionalState.newRef(empty)
+        private val index = TransactionalState.newRef(empty)
 
         def receive = {
           case GetPhotosByDate(Nil) => reply(atomic { index.getOrElse(empty) })

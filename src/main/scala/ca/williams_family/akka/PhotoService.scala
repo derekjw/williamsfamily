@@ -9,6 +9,7 @@ import net.liftweb.util.Helpers._
 
 import model._
 
+import se.scalablesolutions.akka.stm.Transaction.Global._
 import se.scalablesolutions.akka.actor._
 import se.scalablesolutions.akka.dispatch._
 import Futures._
@@ -63,10 +64,9 @@ abstract class PhotoService extends Actor with Logger {
     case CountPhotos => storage forward CountPhotos
     case msg: ForEachPhoto => storage forward msg
     case GetPhotoIds => storage forward GetPhotoIds
-    case msg: SetPhoto => {
+    case msg: SetPhoto =>
       storage forward msg
       indexes.foreach(_ ! msg)
-    }
     case msg: GetPhoto => storage forward msg
     case msg: GetPhotos => storage forward msg
     case msg: GetPhotosByDate => {
