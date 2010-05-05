@@ -1,26 +1,27 @@
 package ca.williams_family
 package lib
 
+import model._
+
 import net.liftweb._
 import http._
+import rest._
 import common._
 import Box._
 import json._
-import json.Serialization.{read, write}
 import json.Extraction.{decompose}
-import se.scalablesolutions.akka.actor.ActorRegistry
 
-object RestDispatch {
-  def init() {
-    LiftRules.statelessDispatchTable.append {
-      case r @ Req("api" :: "photos" :: photoId :: Nil, _, GetRequest) => () => getPhoto(r, photoId)
-      case r @ Req("api" :: "photos" :: Nil, _, PostRequest) => () => postPhoto(r)
-    }
+object RestServices extends RestHelper {
+
+  serveJx {
+    case Get("api" :: "photos" :: photoId :: Nil, _) => getPhoto(photoId)
+    //case Put("api" :: "photos" :: Nil, json) => postPhoto(json)
+    //case Get("api" :: "timeline" :: date, _) => getTimeline(date)
   }
 
-  implicit val formats = Serialization.formats(NoTypeHints)
+  //def getTimeline(date: List[Int]): Box[Convertable]
 
-  def postPhoto(req: Req): Box[LiftResponse] = 
+/*  def postPhoto(req: Req): Box[LiftResponse] = 
     for {
       json <- req.json ~> "No json received"
       photo = read[model.Photo](json.toString)
@@ -28,13 +29,17 @@ object RestDispatch {
     } yield {
       photoService.setPhoto(photo)
       AcceptedResponse()
-    }
+    }*/
 
-  def getPhoto(req: Req, photoId: String): Box[LiftResponse] =
+  def getPhoto(photoId: String): Box[Convertable] =
     for {
-      photoService <- ActorRegistry.actorsFor[akka.PhotoService].headOption ?~ "Photo service not running" ~> 500
-      photo <- photoService.getPhoto(photoId)
-    } yield {
-      JsonResponse(decompose(photo))
-    }
+      ps <- Photo.service
+      photo <- ps.getPhoto(photoId) ?~ "Photo not found" ~> 404
+    } yield photo
+
+  implicit def cvt: JxCvtPF[Convertable] = {
+    case (JsonSelect, c, _) => c.toJson
+    case (XmlSelect, c, _) => c.toXml
+  }
+
 }

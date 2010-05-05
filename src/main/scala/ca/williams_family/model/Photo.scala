@@ -11,7 +11,17 @@ import JsonParser._
 import Serialization.{read, write}
 import org.apache.commons.math.util.MathUtils
 
-case class Photo(id: String, createDate: List[Int], exposure: Rational, aperature: Rational, iso: Int, focalLength: Rational, width: Int, height: Int, images: Map[String, Image])
+trait Convertable {
+  implicit val formats = DefaultFormats
+
+  def toXml: xml.Elem
+  def toJson: JValue
+}
+
+case class Photo(id: String, createDate: List[Int], exposure: Rational, aperature: Rational, iso: Int, focalLength: Rational, width: Int, height: Int, images: Map[String, Image]) extends Convertable {
+  def toJson = Extraction.decompose(this)
+  def toXml = <photo></photo>
+}
 
 object Photo {
   private var photoService: Box[PhotoService] = Failure("Photo service not set")

@@ -6,126 +6,34 @@ import Box._
 
 import model._
 
-import collection.{SortedSet,SortedMap}
-
-import collection.immutable.TreeSet
+import collection.immutable.{TreeMap,TreeSet}
 
 import se.scalablesolutions.akka.actor._
-import se.scalablesolutions.akka.stm._
-import se.scalablesolutions.akka.stm.Transaction.Global._
 import se.scalablesolutions.akka.config.ScalaConfig._
 
 class InMemoryPhotoDateIndex extends PhotoDateIndex {
   lifeCycle = Some(LifeCycle(Permanent))
 
-  val empty = SortedSet[String]()
-
-  private var years = SortedMap[Int, Actor]()
+  private var index = TreeMap[Int, TreeSet[String]]()
 
   def receive = {
-    case GetPhotosByDate(year :: rest) => years.get(year) match {
-      case Some(a) => a forward GetPhotosByDate(rest)
-      case _ => reply(empty)
-    }
-    case GetPhotosByDate(Nil) =>
-      reply(years.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
-        case (s, f) => f.awaitBlocking.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
-      })
-    case SetPhoto(p) =>
+    case GetPhotosByDate(Nil) => reply( index.valuesIterator )
+    case GetPhotosByDate(year :: Nil) =>
+      val d = year * 10000
+      reply(index.range(d,d+10000).valuesIterator)
+    case GetPhotosByDate(year :: month :: Nil) =>
+      val d = year * 10000 + month * 100
+      reply(index.range(d,d+100).valuesIterator)
+    case GetPhotosByDate(year :: month :: day :: Nil) =>
+      val d = year * 10000 + month * 100 + day
+      reply(index.range(d,d+1).valuesIterator)
+    case SetPhoto(p) => {
       p.createDate match {
-        case year :: rest => {
-          years.get(year).getOrElse{
-            val a = new YearIndex(year)
-            startLink(a)
-            years += (year -> a)
-            a
-          } forward SetPhotoDateIndex(p, rest)
+        case year :: month :: day :: rest => {
+          val d = year * 10000 + month * 100 + day
+          index += (d -> (index.getOrElse(d, TreeSet[String]()) + p.id))
         }
         case _ => error("Invalid Photo")
-      }
-  }
-
-  override def shutdown = {
-    years.valuesIterator.foreach {i =>
-      unlink(i)
-      i.stop
-    }
-  }
-
-  class YearIndex(year: Int) extends Actor {
-    id = "PhotoDateIndex:"+year
-    
-    lifeCycle = Some(LifeCycle(Permanent))
-
-    private var months = SortedMap[Int, Actor]()
-
-    def receive = {
-      case GetPhotosByDate(month :: rest) => months.get(month) match {
-        case Some(a) => a forward GetPhotosByDate(rest)
-        case _ => reply(empty)
-      }
-      case GetPhotosByDate(Nil) =>
-        reply(months.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
-          case (s, f) => f.awaitBlocking.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
-        })
-      case SetPhotoDateIndex(p, month :: rest) => months.get(month).getOrElse{
-        val a = new MonthIndex(year, month)
-        startLink(a)
-        months += (month -> a)
-        a
-      } forward SetPhotoDateIndex(p, rest)
-    }
-
-    override def shutdown = {
-      months.valuesIterator.foreach {i =>
-        unlink(i)
-        i.stop
-      }
-    }
-
-    class MonthIndex(year: Int, month: Int) extends Actor {
-      id = "PhotoDateIndex:"+year+"-"+month
-
-      lifeCycle = Some(LifeCycle(Permanent))
-
-      private var days = SortedMap[Int, Actor]()
-
-      def receive = {
-        case GetPhotosByDate(day :: rest) => days.get(day) match {
-          case Some(a) => a forward GetPhotosByDate(rest)
-          case _ => reply(empty)
-        }
-        case GetPhotosByDate(Nil) =>
-          reply(days.valuesIterator.map(a => a !!! GetPhotosByDate(Nil)).foldLeft(empty){
-            case (s, f) => f.awaitBlocking.result.asA[SortedSet[String]].map(s ++ _).getOrElse(s)
-          })
-        case SetPhotoDateIndex(p, day :: rest)  => days.get(day).getOrElse{
-          val a = new DayIndex(year, month, day)
-          startLink(a)
-          days += (day -> a)
-          a
-        } forward SetPhotoDateIndex(p, rest)
-
-      }
-
-      override def shutdown = {
-        days.valuesIterator.foreach {i =>
-          unlink(i)
-          i.stop
-        }
-      }
-
-      class DayIndex(year: Int, month: Int, day: Int) extends Actor {
-        id = "PhotoDateIndex:"+year+"-"+month+"-"+day
-
-        lifeCycle = Some(LifeCycle(Permanent))
-
-        private val index = TransactionalState.newRef(empty)
-
-        def receive = {
-          case GetPhotosByDate(Nil) => reply(atomic { index.getOrElse(empty) })
-          case SetPhotoDateIndex(p,_) => atomic { index.alter(_ + p.id) }
-        }
       }
     }
   }

@@ -38,7 +38,7 @@ class Boot extends Logger {
 
     jsArtifacts = JQuery14Artifacts
 
-    RestDispatch.init()
+    statelessDispatchTable.append(RestServices)
     AjaxDispatch.init()
 
     // where to search snippet
@@ -50,7 +50,7 @@ class Boot extends Logger {
       ps.start
       info("Photo count: "+ps.countPhotos)
       ps.registerIndex(new akka.InMemoryPhotoDateIndex)
-      info("Photos indexed: "+logTime("Getting all from index")(ps.getPhotosByDate(Nil).map(_.size)))
+      info("Photos indexed: "+logTime("Getting all from index")(ps.getPhotosByDate(Nil).map(_.foldLeft(0)(_ + _.size))))
       //val dir = new java.io.File("output")
       //val filter = new java.io.FileFilter() { def accept(file: java.io.File): Boolean = { file.getName.endsWith(".json") } }
       //logTime("Loading production photos")(dir.listFiles(filter).toList.map(f => ps.setPhoto(Photo.deserialize(new String(readWholeFile(f), "UTF-8")))))
