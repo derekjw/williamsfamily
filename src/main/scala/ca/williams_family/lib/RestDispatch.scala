@@ -10,6 +10,7 @@ import common._
 import Box._
 import json._
 import JsonAST._
+import util.Helpers._
 
 object RestServices extends RestHelper {
 
@@ -17,18 +18,22 @@ object RestServices extends RestHelper {
     case Get("api" :: "photos" :: photoId :: Nil, _) => getPhoto(photoId)
     //case Put("api" :: "photos" :: Nil, json) => postPhoto(json)
 
-    case req @ Get("api" :: "timeline" :: date, _) => getTimeline(date, req.param("after").getOrElse(""))
+    case req @ Get("api" :: "timeline" :: TimelineDate(date), _) => getTimeline(date, req.param("after").getOrElse(""))
   }
 
-  def getTimeline(date: List[String], after: String): Box[Convertable] =
+  def getTimeline(date: List[Int], after: String): Box[Convertable] =
     for {
       ps <- Photo.service
-      res <- ps.getPhotosByDate(date.map(_.toInt))
+      res <- ps.getPhotoTimeline(date)
     } yield new Convertable {
       val result = res.valuesIterator.map(_.iterator).flatten.dropWhile(_ <= after).take(1000)
       def toJson = JArray(result.map(JString).toList)
       def toXml = <timeline>{result.map(id => <photo><id>{id}</id></photo>)}</timeline>
     }
+
+  object TimelineDate {
+    def unapply(in: List[String]): Option[List[Int]] = tryo(in.map(_.toInt))
+  }
 
 
 /*  def postPhoto(req: Req): Box[LiftResponse] = 

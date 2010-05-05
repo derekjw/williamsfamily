@@ -32,7 +32,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       Photo.service = new InMemoryPhotoService
       Photo.withService{ps =>
         ps.start
-        ps.registerIndex(new InMemoryPhotoDateIndex)
+        ps.registerIndex(new InMemoryPhotoTimelineIndex)
       }
     }
     after {
@@ -45,7 +45,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       Photo.service = new InMemoryPhotoService
       Photo.withService{ps =>
         ps.start
-        ps.registerIndex(new InMemoryPhotoDateIndex)
+        ps.registerIndex(new InMemoryPhotoTimelineIndex)
         awaitAll((1 to 10000).flatMap(i => genPhoto.sample.map(ps.setPhoto)).toList)
       }
     }
@@ -59,7 +59,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       Photo.service = new InMemoryPhotoService
       Photo.withService{ps =>
         ps.start
-        ps.registerIndex(new InMemoryPhotoDateIndex)
+        ps.registerIndex(new InMemoryPhotoTimelineIndex)
         (1 to 10000).foreach(i => genPhoto.sample.foreach(ps.setPhoto))
       }
     }
@@ -68,12 +68,12 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
     }
   }
 
-  val fullNoIndexes = new Context {
+  val fullNonBlockingNoIndexes = new Context {
     before {
       Photo.service = new InMemoryPhotoService
       Photo.withService{ps =>
         ps.start
-        awaitAll((1 to 10000).flatMap(i => genPhoto.sample.map(ps.setPhoto)).toList)
+        (1 to 10000).flatMap(i => genPhoto.sample.map(ps.setPhoto))
       }
     }
     after {
@@ -113,32 +113,32 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
     }
   }
 
-  "photo date index" ->- fullNonBlocking should {
+  "photo timeline" ->- fullNonBlocking should {
     "return ids of inserted photos" in {
       Photo.withService{ps =>
         Prop.forAll{p: Photo => {
           ps.setPhoto(p).awaitBlocking
           val date = p.createDate.take(3)
-          ps.getPhotosByDate(date).exists(_.exists(_(p.id))) && ps.getPhotosByDate(List(date.head, date.tail.head)).exists(_.exists(_(p.id))) && ps.getPhotosByDate(List(date.head)).exists(_.exists(_(p.id)))
+          ps.getPhotoTimeline(date).exists(_.exists(_._2(p.id))) && ps.getPhotoTimeline(List(date.head, date.tail.head)).exists(_.exists(_._2(p.id))) && ps.getPhotoTimeline(List(date.head)).exists(_.exists(_._2(p.id)))
         }} must pass
-        ps.countPhotos must_== ps.getPhotosByDate(Nil).map(_.foldLeft(0)(_ + _.size))
+        ps.countPhotos must_== ps.getPhotoTimeline(Nil).map(_.foldLeft(0)(_ + _._2.size))
         var pIds = Set[String]()
-        awaitAll((1 to 10000).flatMap(i => genPhoto.sample.map{p => pIds += p.id; ps.setPhoto(p)}).toList)
+        awaitAll((1 to 1000).flatMap(i => genPhoto.sample.map{p => pIds += p.id; ps.setPhoto(p)}).toList)
         logTime("Get "+pIds.size+" photos")(pIds.map(pId => ps.getPhoto(pId))).foreach(_ must beFull)
       }
     }
   }
 
-  "reindexing" ->- fullNoIndexes should {
+  "reindexing" ->- fullNonBlockingNoIndexes should {
     "return indexed values" in {
       Photo.withService{ps =>
-        ps.registerIndex(new InMemoryPhotoDateIndex)
+        ps.registerIndex(new InMemoryPhotoTimelineIndex)
         Prop.forAll{p: Photo =>
           ps.setPhoto(p)
           val date = p.createDate.take(3)
-          ps.getPhotosByDate(date).exists(_.exists(_(p.id))) && ps.getPhotosByDate(List(date.head, date.tail.head)).exists(_.exists(_(p.id))) && ps.getPhotosByDate(List(date.head)).exists(_.exists(_(p.id)))
+          ps.getPhotoTimeline(date).exists(_.exists(_._2(p.id))) && ps.getPhotoTimeline(List(date.head, date.tail.head)).exists(_.exists(_._2(p.id))) && ps.getPhotoTimeline(List(date.head)).exists(_.exists(_._2(p.id)))
         } must pass
-        ps.countPhotos must_== ps.getPhotosByDate(Nil).map(_.foldLeft(0)(_ + _.size))
+        ps.countPhotos must_== ps.getPhotoTimeline(Nil).map(_.foldLeft(0)(_ + _._2.size))
       }
     }
   }

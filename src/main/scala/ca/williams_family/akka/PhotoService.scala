@@ -41,7 +41,7 @@ abstract class PhotoService extends Actor with Logger {
       for {
         photo <- getPhoto(pId)
         idx <- index
-      } {idx ! SetPhoto(photo)}
+      } {idx !!! SetPhoto(photo)}
     })
   }
 
@@ -55,10 +55,8 @@ abstract class PhotoService extends Actor with Logger {
       photo <-res ?~ "Photo Not Found" ~> 404
     } yield photo
 
-  def getPhotosByDate(key: List[Int] = Nil) =
-    for {
-      res <- ((this !! GetPhotosByDate(key)) ?~ "Timed out").asA[TreeMap[(Int,Int,Int),TreeSet[String]]] ?~ "Invalid Response"
-    } yield res
+  def getPhotoTimeline(key: List[Int] = Nil) =
+    for (res <- ((this !! GetPhotoTimeline(key)) ?~ "Timed out").asA[PhotoTimelineTypes.Col] ?~ "Invalid Response") yield res
 
   def receive = {
     case CountPhotos => storage forward CountPhotos
@@ -66,12 +64,12 @@ abstract class PhotoService extends Actor with Logger {
     case GetPhotoIds => storage forward GetPhotoIds
     case msg: SetPhoto =>
       storage forward msg
-      indexes.foreach(_ ! msg)
+      indexes.foreach(_ !!! msg)
     case msg: GetPhoto => storage forward msg
     case msg: GetPhotos => storage forward msg
-    case msg: GetPhotosByDate => {
+    case msg: GetPhotoTimeline => {
       val idx = indexes.find{
-        case i: PhotoDateIndex => true
+        case i: PhotoTimelineIndex => true
         case _ => false
       }
       Box(idx).foreach(_ forward msg)
