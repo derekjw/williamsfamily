@@ -9,17 +9,27 @@ import rest._
 import common._
 import Box._
 import json._
-import json.Extraction.{decompose}
+import JsonAST._
 
 object RestServices extends RestHelper {
 
   serveJx {
     case Get("api" :: "photos" :: photoId :: Nil, _) => getPhoto(photoId)
     //case Put("api" :: "photos" :: Nil, json) => postPhoto(json)
-    //case Get("api" :: "timeline" :: date, _) => getTimeline(date)
+
+    case req @ Get("api" :: "timeline" :: date, _) => getTimeline(date, req.param("after").getOrElse(""))
   }
 
-  //def getTimeline(date: List[Int]): Box[Convertable]
+  def getTimeline(date: List[String], after: String): Box[Convertable] =
+    for {
+      ps <- Photo.service
+      res <- ps.getPhotosByDate(date.map(_.toInt))
+    } yield new Convertable {
+      val result = res.valuesIterator.map(_.iterator).flatten.dropWhile(_ <= after).take(1000)
+      def toJson = JArray(result.map(JString).toList)
+      def toXml = <timeline>{result.map(id => <photo><id>{id}</id></photo>)}</timeline>
+    }
+
 
 /*  def postPhoto(req: Req): Box[LiftResponse] = 
     for {

@@ -1,7 +1,7 @@
 package ca.williams_family
 package akka
 
-import collection.immutable.TreeSet
+import collection.immutable.{TreeMap,TreeSet}
 
 import net.liftweb.common._
 import Box._
@@ -55,9 +55,9 @@ abstract class PhotoService extends Actor with Logger {
       photo <-res ?~ "Photo Not Found" ~> 404
     } yield photo
 
-  def getPhotosByDate(key: List[Int]) =
+  def getPhotosByDate(key: List[Int] = Nil) =
     for {
-      res <- ((this !! GetPhotosByDate(key)) ?~ "Timed out").asA[Iterator[TreeSet[String]]] ?~ "Invalid Response"
+      res <- ((this !! GetPhotosByDate(key)) ?~ "Timed out").asA[TreeMap[(Int,Int,Int),TreeSet[String]]] ?~ "Invalid Response"
     } yield res
 
   def receive = {

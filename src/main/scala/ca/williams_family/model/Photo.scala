@@ -19,8 +19,8 @@ trait Convertable {
 }
 
 case class Photo(id: String, createDate: List[Int], exposure: Rational, aperature: Rational, iso: Int, focalLength: Rational, width: Int, height: Int, images: Map[String, Image]) extends Convertable {
+  def toXml = <photo>{Xml.toXml(toJson)}</photo>
   def toJson = Extraction.decompose(this)
-  def toXml = <photo></photo>
 }
 
 object Photo {

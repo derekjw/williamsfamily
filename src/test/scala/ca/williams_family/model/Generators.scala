@@ -42,7 +42,7 @@ object Generators {
     val calend = cal.getTimeInMillis
     Gen.choose(calstart,calend).map{i =>
       cal.setTimeInMillis(i)
-      List(C.YEAR, C.MONTH, C.DATE, C.HOUR_OF_DAY, C.MINUTE, C.SECOND, C.MILLISECOND).map(cal.get)
+      cal.get(C.YEAR) :: (cal.get(C.MONTH) + 1) :: List(C.DATE, C.HOUR_OF_DAY, C.MINUTE, C.SECOND, C.MILLISECOND).map(cal.get)
     }
   }
 
