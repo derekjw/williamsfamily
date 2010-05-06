@@ -26,7 +26,7 @@ object RestServices extends RestHelper {
       ps <- Photo.service
       res <- ps.getPhotoTimeline(date)
     } yield new Convertable {
-      val result = res.valuesIterator.map(_.iterator).flatten.dropWhile(_ <= after).take(1000)
+      val result = res.valuesAll.dropWhile(_ <= after).take(1000)
       def toJson = JArray(result.map(JString).toList)
       def toXml = <timeline>{result.map(id => <photo><id>{id}</id></photo>)}</timeline>
     }

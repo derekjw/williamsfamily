@@ -56,7 +56,7 @@ abstract class PhotoService extends Actor with Logger {
     } yield photo
 
   def getPhotoTimeline(key: List[Int] = Nil) =
-    for (res <- ((this !! GetPhotoTimeline(key)) ?~ "Timed out").asA[PhotoTimelineTypes.Col] ?~ "Invalid Response") yield res
+    for (res <- ((this !! GetPhotoTimeline(key)) ?~ "Timed out").asA[PhotoTimeline] ?~ "Invalid Response") yield res
 
   def receive = {
     case CountPhotos => storage forward CountPhotos

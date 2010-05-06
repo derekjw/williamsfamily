@@ -119,9 +119,9 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
         Prop.forAll{p: Photo => {
           ps.setPhoto(p).awaitBlocking
           val date = p.createDate.take(3)
-          ps.getPhotoTimeline(date).exists(_.exists(_._2(p.id))) && ps.getPhotoTimeline(List(date.head, date.tail.head)).exists(_.exists(_._2(p.id))) && ps.getPhotoTimeline(List(date.head)).exists(_.exists(_._2(p.id)))
+          ps.getPhotoTimeline(date).exists(_(p.id)) && ps.getPhotoTimeline(List(date.head, date.tail.head)).exists(_(p.id)) && ps.getPhotoTimeline(List(date.head)).exists(_(p.id))          
         }} must pass
-        ps.countPhotos must_== ps.getPhotoTimeline(Nil).map(_.foldLeft(0)(_ + _._2.size))
+        ps.countPhotos must_== ps.getPhotoTimeline().map(_.sizeAll)
         var pIds = Set[String]()
         awaitAll((1 to 1000).flatMap(i => genPhoto.sample.map{p => pIds += p.id; ps.setPhoto(p)}).toList)
         logTime("Get "+pIds.size+" photos")(pIds.map(pId => ps.getPhoto(pId))).foreach(_ must beFull)
@@ -136,9 +136,9 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
         Prop.forAll{p: Photo =>
           ps.setPhoto(p)
           val date = p.createDate.take(3)
-          ps.getPhotoTimeline(date).exists(_.exists(_._2(p.id))) && ps.getPhotoTimeline(List(date.head, date.tail.head)).exists(_.exists(_._2(p.id))) && ps.getPhotoTimeline(List(date.head)).exists(_.exists(_._2(p.id)))
+          ps.getPhotoTimeline(date).exists(_(p.id)) && ps.getPhotoTimeline(List(date.head, date.tail.head)).exists(_(p.id)) && ps.getPhotoTimeline(List(date.head)).exists(_(p.id))
         } must pass
-        ps.countPhotos must_== ps.getPhotoTimeline(Nil).map(_.foldLeft(0)(_ + _._2.size))
+        ps.countPhotos must_== ps.getPhotoTimeline(Nil).map(_.sizeAll)
       }
     }
   }
