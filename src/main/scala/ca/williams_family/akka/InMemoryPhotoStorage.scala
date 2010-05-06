@@ -12,7 +12,7 @@ import se.scalablesolutions.akka.config.ScalaConfig._
 
 trait InMemoryPhotoStorageFactory {
   self: Actor =>
-  val storage: PhotoStorage = spawnLink[InMemoryPhotoStorage]
+  val storage: ActorID = spawnLink[InMemoryPhotoStorage]
 }
 
 class InMemoryPhotoStorage extends PhotoStorage {

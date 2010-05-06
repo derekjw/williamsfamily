@@ -10,7 +10,7 @@ import net.liftweb.sitemap._
 import net.liftweb.sitemap.Loc._
 import Helpers._
 
-import se.scalablesolutions.akka.actor._
+import se.scalablesolutions.akka.actor.Actor._
 import se.scalablesolutions.akka.dispatch.Futures._
 import se.scalablesolutions.akka.config.ScalaConfig._
 
@@ -44,12 +44,12 @@ class Boot extends Logger {
     // where to search snippet
     addToPackages("ca.williams_family")
 
-    Photo.service = new akka.PhotoService with akka.RedisPhotoStorageFactory
+    Photo.service = new RedisPhotoService
 
     Photo.withService{ps =>
       ps.start
       info("Photo count: "+ps.countPhotos)
-      ps.registerIndex(new akka.InMemoryPhotoTimelineIndex)
+      ps.registerIndex(newActor[akka.InMemoryPhotoTimelineIndex])
       info("Photos indexed: "+logTime("Getting all from index")(ps.getPhotoTimeline().map(_.size)))
       //val dir = new java.io.File("output")
       //val filter = new java.io.FileFilter() { def accept(file: java.io.File): Boolean = { file.getName.endsWith(".json") } }
@@ -88,3 +88,5 @@ class Boot extends Logger {
 
 }
 
+
+class RedisPhotoService extends akka.PhotoService with akka.RedisPhotoStorageFactory

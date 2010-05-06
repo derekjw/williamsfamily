@@ -13,6 +13,7 @@ import org.scalacheck._
 import scala.collection.SortedSet
 
 import se.scalablesolutions.akka.actor.{Actor,ActorRegistry}
+import Actor._
 import se.scalablesolutions.akka.dispatch.Futures._
 
 import net.liftweb.common._
@@ -32,7 +33,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       Photo.service = new InMemoryPhotoService
       Photo.withService{ps =>
         ps.start
-        ps.registerIndex(new InMemoryPhotoTimelineIndex)
+        ps.registerIndex(newActor[InMemoryPhotoTimelineIndex])
       }
     }
     after {
@@ -45,7 +46,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       Photo.service = new InMemoryPhotoService
       Photo.withService{ps =>
         ps.start
-        ps.registerIndex(new InMemoryPhotoTimelineIndex)
+        ps.registerIndex(newActor[InMemoryPhotoTimelineIndex])
         awaitAll((1 to 10000).flatMap(i => genPhoto.sample.map(ps.setPhoto)).toList)
       }
     }
@@ -59,7 +60,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       Photo.service = new InMemoryPhotoService
       Photo.withService{ps =>
         ps.start
-        ps.registerIndex(new InMemoryPhotoTimelineIndex)
+        ps.registerIndex(newActor[InMemoryPhotoTimelineIndex])
         (1 to 10000).foreach(i => genPhoto.sample.foreach(ps.setPhoto))
       }
     }
@@ -132,7 +133,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
   "reindexing" ->- fullNonBlockingNoIndexes should {
     "return indexed values" in {
       Photo.withService{ps =>
-        ps.registerIndex(new InMemoryPhotoTimelineIndex)
+        ps.registerIndex(newActor[InMemoryPhotoTimelineIndex])
         Prop.forAll{p: Photo =>
           ps.setPhoto(p)
           val date = p.createDate.take(3)

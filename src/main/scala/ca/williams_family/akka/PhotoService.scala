@@ -22,13 +22,13 @@ abstract class PhotoService extends Actor with Logger {
   faultHandler = Some(OneForOneStrategy(5, 5000))
   trapExit = List(classOf[Exception])
 
-  val storage: PhotoStorage
+  val storage: ActorID
 
-  private var indexes: Set[PhotoIndex] = Set()
+  private var indexes: Set[ActorID] = Set()
 
-  def registerIndex(index: PhotoIndex) { registerIndex(List(index)) }
+  def registerIndex(index: ActorID) { registerIndex(List(index)) }
 
-  def registerIndex(index: Iterable[PhotoIndex]) {
+  def registerIndex(index: Iterable[ActorID]) {
     index.foreach{i =>
       startLink(i)
       indexes += i
@@ -36,8 +36,8 @@ abstract class PhotoService extends Actor with Logger {
     reIndex(index)
   }
 
-  def reIndex(index: Iterable[PhotoIndex]) {
-    logTime("ReIndexing photos")(((this !! GetPhotoIds) ?~ "Timed out").asA[List[String]].getOrElse(Nil).foreach{pId =>
+  def reIndex(index: Iterable[ActorID]) {
+    logTime("ReIndexing photos")(((self !! GetPhotoIds) ?~ "Timed out").asA[List[String]].getOrElse(Nil).foreach{pId =>
       for {
         photo <- getPhoto(pId)
         idx <- index
@@ -45,18 +45,18 @@ abstract class PhotoService extends Actor with Logger {
     })
   }
 
-  def countPhotos = ((this !! CountPhotos) ?~ "Timed out").asA[java.lang.Integer].map(_.intValue)
+  def countPhotos = ((self !! CountPhotos) ?~ "Timed out").asA[java.lang.Integer].map(_.intValue)
 
-  def setPhoto(photo: Photo): Future[Boolean] = this !!! SetPhoto(photo)
+  def setPhoto(photo: Photo): Future[Boolean] = self !!! SetPhoto(photo)
 
   def getPhoto(id: String) =
     for {
-      res <- ((this !! GetPhoto(id)) ?~ "Timed out" ~> 500).asA[Option[Photo]]
+      res <- ((self !! GetPhoto(id)) ?~ "Timed out" ~> 500).asA[Option[Photo]]
       photo <-res ?~ "Photo Not Found" ~> 404
     } yield photo
 
   def getPhotoTimeline(key: List[Int]): Box[PhotoTimeline] =
-    for (res <- ((this !! GetPhotoTimeline(key)) ?~ "Timed out").asA[PhotoTimeline] ?~ "Invalid Response") yield res
+    for (res <- ((self !! GetPhotoTimeline(key)) ?~ "Timed out").asA[PhotoTimeline] ?~ "Invalid Response") yield res
 
   def getPhotoTimeline(year: Int = 0, month: Int = 0, day: Int = 0): Box[PhotoTimeline] = getPhotoTimeline(List(year,month,day).filterNot(_ == 0))
 
@@ -70,10 +70,7 @@ abstract class PhotoService extends Actor with Logger {
     case msg: GetPhoto => storage forward msg
     case msg: GetPhotos => storage forward msg
     case msg: GetPhotoTimeline => {
-      val idx = indexes.find{
-        case i: PhotoTimelineIndex => true
-        case _ => false
-      }
+      val idx = indexes.find(i => classOf[PhotoTimelineIndex].isAssignableFrom(i.actorClass))
       Box(idx).foreach(_ forward msg)
       if (idx.isEmpty) reply(Failure("Index not found"))
     }
