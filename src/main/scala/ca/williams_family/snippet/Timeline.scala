@@ -51,8 +51,8 @@ class Timeline {
       } yield {
         bind("t", xhtml,
              AttrBindParam("id", Text(photo.id), "id"),
-             AttrBindParam("href", Text("/photos/"+photo.id), "href"),
-             AttrBindParam("src", Text("http://photos.williams-family.ca/photos/"+thumb.fileName), "src"))
+             AttrBindParam("href", Text(photo.uri), "href"),
+             AttrBindParam("src", Text(thumb.uri), "src"))
       }
     }.flatten
 

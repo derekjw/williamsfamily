@@ -16,7 +16,7 @@ class Photo {
       photo <- ps.getPhoto(id) ?~ "Photo not found"
       image <- photo.images.get("preview") ?~ "Preview image not found"
     } yield {
-      bind("p", html, AttrBindParam("src", Text("http://williams-family.ca/photos/"+image.fileName), "src"))
+      bind("p", html, AttrBindParam("src", Text(image.uri), "src"))
     }
   }
 

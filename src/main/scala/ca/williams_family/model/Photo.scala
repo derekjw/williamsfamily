@@ -51,7 +51,7 @@ object Photo {
 }
 
 case class Image(fileName: String, fileSize: Int, hash: String, width: Int, height: Int) {
-  def uri = "http://williams-family.ca/photos/"+fileName
+  def uri = "http://photos.williams-family.ca/photos/"+fileName
 
   def toJson: JValue = {
     ("filename" -> fileName) ~
