@@ -76,6 +76,7 @@ class Boot extends Logger {
       Menu(Loc("Home", List("index"), "Home")) ::
       Menu(Loc("Location", List("location"), "Location", Hidden)) :: 
       Menu(Loc("Photo", List("photo"), "Photo", Hidden)) ::
+      Menu(Loc("Timeline", List("timeline"), "Timeline", Hidden)) ::
       Nil
     setSiteMap(SiteMap(entries:_*))
 
