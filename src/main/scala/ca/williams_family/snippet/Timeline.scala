@@ -37,23 +37,27 @@ class Timeline {
       }
     }.flatten
   
-  def photos(xhtml: NodeSeq): NodeSeq = {<p></p>}
-/*    val year = S.param("year").map(_.toInt) getOrElse 0
-    val month = S.param("month").map(_.toInt) getOrElse 0
+  def photos(xhtml: NodeSeq): NodeSeq =
     for {
-      photo <- Photo
-      if photo.createDate.value.getYear == year
-      if photo.createDate.value.getMonthOfYear == month
-      if photo.images(180).isDefined
-      result <- bind("t", xhtml,
-                     AttrBindParam("id", Text(photo.id.value), "id"),
-                     AttrBindParam("href", Text(photo.uri), "href"),
-                     AttrBindParam("src", Text(photo.images(180).map(_.uri).getOrElse("")), "src"))
-    } yield result
-  }*/
+      ps <- Photo.service
+      year <- S.param("year").flatMap(asInt)
+      month <- S.param("month").flatMap(asInt)
+      tl <- ps.getPhotoTimeline(year,month)
+    } yield {
+      for {
+        pId <- tl.toSeq
+        photo <- ps.getPhoto(pId)
+        thumb <- photo.images.get("thumbnail")
+      } yield {
+        bind("t", xhtml,
+             AttrBindParam("id", Text(photo.id), "id"),
+             AttrBindParam("href", Text("/photos/"+photo.id), "href"),
+             AttrBindParam("src", Text("http://photos.williams-family.ca/photos/"+thumb.fileName), "src"))
+      }
+    }.flatten
 
 
-  implicit def boxToNodeSeq[T <% NodeSeq](in: Box[T]): NodeSeq = in match {
+  implicit def boxToNodeSeq(in: Box[Seq[Node]]): NodeSeq = in match {
     case Full(n) => n
     case Failure(m,_,_) => Text(m)
     case Empty => Text("")

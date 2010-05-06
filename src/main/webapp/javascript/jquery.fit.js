@@ -1,7 +1,7 @@
-jQuery.fn.fit = function (fitWidth, fitHeight) {
-  return this.each(function () {
+jQuery.fn.fit = function(fitWidth, fitHeight) {
+  return this.each(function() {
     var $this, w, h, scale_w, scale_h, scale;
-    $this = jQuery(this);
+    $this = $(this);
     w = $this.data('width');
     h = $this.data('height');
     if (w > 0 && h > 0) {
@@ -14,7 +14,7 @@ jQuery.fn.fit = function (fitWidth, fitHeight) {
       } else {
         $this.width(w);
         $this.height(h);
-      }
-    }
+      };
+    };
   });
 };

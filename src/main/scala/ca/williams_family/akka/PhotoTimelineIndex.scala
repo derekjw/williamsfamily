@@ -1,7 +1,9 @@
 package ca.williams_family
 package akka
 
-import collection.immutable.{TreeMap,TreeSet,SortedMap}
+import net.liftweb.util.Helpers._
+
+import collection.immutable.{TreeMap,TreeSet,SortedMap,SortedSet}
 
 import model._
 
@@ -40,36 +42,28 @@ trait PhotoTimelineIndex extends PhotoIndex {
 
 }
 
-case class PhotoTimeline(value: PhotoTimelineTypes.Col) extends SortedMap[PhotoTimelineTypes.K, PhotoTimelineTypes.VSet] {
+case class PhotoTimeline(treemap: PhotoTimelineTypes.Col)(implicit val ordering: Ordering[String]) extends SortedSet[PhotoTimelineTypes.V] {
   import PhotoTimelineTypes._
-  type ColWrapper = SortedMap[PhotoTimelineTypes.K, PhotoTimelineTypes.VSet]
 
-  def -(key: K) = value - key
+  def mkSet = logTime("Making new SortedSet from PhotoTimeline")(TreeSet[V]() ++ iterator)
 
-  def rangeImpl(from: Option[K], until: Option[K]) = value.rangeImpl(from, until)
+  def rangeImpl(from: Option[V], until: Option[V]) = mkSet.rangeImpl(from, until)
 
-  def ordering = value.ordering
+  def -(elem: V) = mkSet - elem
 
-  def iterator = value.iterator
+  def +(elem: V) = mkSet + elem
 
-  def get(key: K) = value.get(key)
+  def contains(elem: V) = treemap.exists(_._2(elem))
 
-  def sizeAll = valuesIterator.foldLeft(0)(_ + _.size)
+  def iterator = treemap.valuesIterator.map(_.iterator).flatten
 
-  def valuesAll = valuesIterator.map(_.iterator).flatten
+  override def size = treemap.valuesIterator.foldLeft(0)(_ + _.size)
 
-  def exists(value: V): Boolean = exists(_._2(value))
-
-  def apply(value: V): Boolean = exists(value)
-
-  def groupByYMD = foldLeft(TreeMap[Int, TreeMap[Int, TreeMap[Int, VSet]]]()){
+  def groupByYMD = treemap.foldLeft(TreeMap[Int, TreeMap[Int, TreeMap[Int, VSet]]]()){
     case (cy, ((y,m,d),v)) => {
       val cm = cy.get(y).getOrElse(TreeMap[Int, TreeMap[Int, VSet]]())
       val cd = cm.get(m).getOrElse(TreeMap[Int, VSet]())
       cy + (y -> (cm + (m -> (cd + (d -> v)))))
     }
-
-
   }
-
 }

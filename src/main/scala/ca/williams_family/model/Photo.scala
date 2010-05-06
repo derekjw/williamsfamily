@@ -11,16 +11,14 @@ import JsonParser._
 import Serialization.{read, write}
 import org.apache.commons.math.util.MathUtils
 
-trait Convertable {
-  implicit val formats = DefaultFormats
-
-  def toXml: xml.Elem
-  def toJson: JValue
-}
-
-case class Photo(id: String, createDate: List[Int], exposure: Rational, aperature: Rational, iso: Int, focalLength: Rational, width: Int, height: Int, images: Map[String, Image]) extends Convertable {
-  def toXml = <photo>{Xml.toXml(toJson)}</photo>
-  def toJson = Extraction.decompose(this)
+case class Photo(id: String, createDate: List[Int], exposure: Rational, aperature: Rational, iso: Int, focalLength: Rational, width: Int, height: Int, images: Map[String, Image]) {
+  def uri = "/photos/"+id
+  def toJson = {
+    ("id", id) ~
+    ("uri", uri) ~
+    ("createdate", Photo.mkDate(createDate)) ~
+    ("images", JObject(images.map{case (k,v) => JField(k, v.toJson)}.toList))
+  }
 }
 
 object Photo {
@@ -47,9 +45,23 @@ object Photo {
       "%04d%02d%02d-%02d%02d%02d%02d-%s".format(year, month, day, hour, minute, second, msecond, hash)
   }
 
+  def mkDate(date: List[Int]) =
+    "%04d-%02d-%02dT%02d:%02d:%02d.%02d" format (date:_*)
+
 }
 
-case class Image(fileName: String, fileSize: Int, hash: String, width: Int, height: Int)
+case class Image(fileName: String, fileSize: Int, hash: String, width: Int, height: Int) {
+  def uri = "http://williams-family.ca/photos/"+fileName
+
+  def toJson: JValue = {
+    ("filename" -> fileName) ~
+    ("filesize" -> fileSize) ~
+    ("uri" -> uri) ~
+    ("hash" -> hash) ~
+    ("width" -> width) ~
+    ("height" -> height)
+  }
+}
 
 object R {
   val common: Map[(Int, Int), Rational] =

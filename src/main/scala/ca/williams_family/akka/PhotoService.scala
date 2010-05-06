@@ -55,8 +55,10 @@ abstract class PhotoService extends Actor with Logger {
       photo <-res ?~ "Photo Not Found" ~> 404
     } yield photo
 
-  def getPhotoTimeline(key: List[Int] = Nil) =
+  def getPhotoTimeline(key: List[Int]): Box[PhotoTimeline] =
     for (res <- ((this !! GetPhotoTimeline(key)) ?~ "Timed out").asA[PhotoTimeline] ?~ "Invalid Response") yield res
+
+  def getPhotoTimeline(year: Int = 0, month: Int = 0, day: Int = 0): Box[PhotoTimeline] = getPhotoTimeline(List(year,month,day).filterNot(_ == 0))
 
   def receive = {
     case CountPhotos => storage forward CountPhotos

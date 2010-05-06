@@ -50,7 +50,7 @@ class Boot extends Logger {
       ps.start
       info("Photo count: "+ps.countPhotos)
       ps.registerIndex(new akka.InMemoryPhotoTimelineIndex)
-      info("Photos indexed: "+logTime("Getting all from index")(ps.getPhotoTimeline().map(_.sizeAll)))
+      info("Photos indexed: "+logTime("Getting all from index")(ps.getPhotoTimeline().map(_.size)))
       //val dir = new java.io.File("output")
       //val filter = new java.io.FileFilter() { def accept(file: java.io.File): Boolean = { file.getName.endsWith(".json") } }
       //logTime("Loading production photos")(dir.listFiles(filter).toList.map(f => ps.setPhoto(Photo.deserialize(new String(readWholeFile(f), "UTF-8")))))
@@ -76,7 +76,8 @@ class Boot extends Logger {
       Menu(Loc("Home", List("index"), "Home")) ::
       Menu(Loc("Location", List("location"), "Location", Hidden)) :: 
       Menu(Loc("Photo", List("photo"), "Photo", Hidden)) ::
-      Menu(Loc("Timeline", List("timeline"), "Timeline", Hidden)) ::
+      Menu(Loc("Timeline", List("timeline"), "Photos")) ::
+      Menu(Loc("Timeline Photos", List("timeline-photos"), "Timeline Photos", Hidden)) ::
       Nil
     setSiteMap(SiteMap(entries:_*))
 
