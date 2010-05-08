@@ -7,7 +7,7 @@ import net.liftweb.http._
 
 import Helpers._
 
-case class User(fbid: Long, email: String) {
+case class User(email: String, fbid: Long) {
   def id = email
   def save: Boolean = true
   def validate: List[FieldError] = Nil
@@ -15,7 +15,7 @@ case class User(fbid: Long, email: String) {
 
 object User {
   def find(email: String): Box[User] = Empty
-  def findByFbId(fbid: Long): Box[User] = Full(User(fbid, "test@example.com"))
+  def findByFbId(fbid: Long): Box[User] = Full(User("test@example.com", fbid))
   def findByFbId(fbid: String): Box[User] = 
     for {
       fbidValid <- asLong(fbid)
@@ -26,12 +26,12 @@ object User {
     println("Logging in user "+user)
     curUser.remove()
     curUserId(Full(user.id))
-    onLogIn.foreach(_(who))
+    //onLogIn.foreach(_(who))
   }
 
   def logUserOut() {
-    println("Logging out user "+user)
-    onLogOut.foreach(_(curUser))
+    currentUser.foreach(u => println("Logging out user "+u))
+    //onLogOut.foreach(_(curUser))
     curUserId.remove()
     curUser.remove()
     S.request.foreach(_.request.session.terminate)

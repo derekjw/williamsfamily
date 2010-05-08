@@ -68,7 +68,10 @@ class UserSnippet {
     }
   }
 
-  def logoutCmd: JsCmd = Call("FB.Connect.logout", AnonFunc(redirectRoot))
+  def logoutCmd: JsCmd = Call("FB.Connect.logout", AnonFunc{
+    User.logUserOut()
+    redirectRoot
+  })
 
   def connectCmd:JsCmd = requireSession { session =>
     val user = User.currentUser.open_!
