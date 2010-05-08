@@ -1,37 +1,74 @@
 package ca.williams_family
 package model
 
+import xml.{Node}
+
+import akka._
+
 import net.liftweb.common._
 import net.liftweb.util._
 import net.liftweb.http._
+import net.liftweb.json._
+import JsonAST._
+import JsonDSL._
+import JsonParser._
+import Serialization.{read, write}
 
 import Helpers._
 
-case class User(email: String, fbid: Long) {
-  def id = email
+import net.liftweb.ext_api.facebook.{FacebookClient, FacebookSession, GetInfo, Name, SquarePic, Username, Email}
+
+case class User(id: Long, userName: String, name: String, photoUri: String) {
   def save: Boolean = true
   def validate: List[FieldError] = Nil
 }
 
 object User {
-  def find(email: String): Box[User] = Empty
-  def findByFbId(fbid: Long): Box[User] = Full(User("test@example.com", fbid))
-  def findByFbId(fbid: String): Box[User] = 
+  private var userService: Box[UserService] = Failure("User service not set")
+
+  def service = userService
+
+  def service_=(us: UserService): Unit = userService = Full(us)
+
+  def serialize(in: User) = {
+    implicit val formats = DefaultFormats
+    write(in)
+  }
+
+  def deserialize(in: String) = {
+    implicit val formats = DefaultFormats
+    read[User](in)
+  }
+
+  def fromXml(in: Node): Box[User] =
     for {
-      fbidValid <- asLong(fbid)
-      res <- findByFbId(fbidValid)
-    } yield res
+      id <- asLong((in \\ "uid").text)
+      userName <- Full((in \\ "username").text)
+      name <- Full((in \\ "name").text)
+      photoUri <- Full((in \\ "pic_square").text)
+    } yield User(id,userName,name,photoUri)
+
+  def loginFromFacebook(session: FacebookSession): Box[User] = {
+    fbSession(Full(session))
+    for {
+      user <- fromXml(FacebookClient.fromSession(session).getInfo(asLong(session.uid), Name, Username, SquarePic))
+      us <- service
+    } {
+      us.setUser(user)
+      logUserIn(user)
+    }
+    currentUser
+  }
 
   def logUserIn(user: User) {
     println("Logging in user "+user)
     curUser.remove()
+    curUser(Full(user))
     curUserId(Full(user.id))
-    //onLogIn.foreach(_(who))
   }
 
   def logUserOut() {
     currentUser.foreach(u => println("Logging out user "+u))
-    //onLogOut.foreach(_(curUser))
     curUserId.remove()
     curUser.remove()
     S.request.foreach(_.request.session.terminate)
@@ -39,20 +76,23 @@ object User {
 
   def notLoggedIn_? = !loggedIn_?
 
-  def loggedIn_? = {
-    if(!currentUserId.isDefined)
-      for(f <- autologinFunc) f()
-    currentUserId.isDefined
-  }
+  def loggedIn_? = currentUserId.isDefined
 
-  var autologinFunc: Box[()=>Unit] = Empty
+  private object curUserId extends SessionVar[Box[Long]](Empty)
 
-  private object curUserId extends SessionVar[Box[String]](Empty)
+  def currentUserId: Box[Long] = curUserId.is
 
-  def currentUserId: Box[String] = curUserId.is
-
-  private object curUser extends RequestVar[Box[User]](curUserId.flatMap(id => find(id)))
+  private object curUser extends RequestVar[Box[User]](
+    for {
+      us <- service
+      id <- curUserId
+      user <- us.getUser(id)
+    } yield user)
 
   def currentUser: Box[User] = curUser.is
+
+  private object fbSession extends SessionVar[Box[FacebookSession]](Empty)
+
+  def facebookSession: Box[FacebookSession] = fbSession
 
 }

@@ -19,6 +19,7 @@ import net.liftweb.ext_api.facebook.{FacebookRestApi}
 import ca.williams_family._
 import model._
 import lib._
+import akka._
 
 /**
  * A class that's instantiated early and run.  It allows the application
@@ -41,16 +42,13 @@ class Boot extends Logger {
     //this is really important for fb connect
     useXhtmlMimeType = false 
 
-    println(Props.get("fbapikey"))
-
     Props.get("fbapikey").foreach(FacebookRestApi.apiKey = _)
     Props.get("fbsecret").foreach(FacebookRestApi.secret = _)
 
     jsArtifacts = JQuery14Artifacts
 
-    ajaxStart = Full(() => LiftRules.jsArtifacts.show("ajax-loader").cmd)
-
-    ajaxEnd = Full(() => LiftRules.jsArtifacts.hide("ajax-loader").cmd)
+    //ajaxStart = Full(() => jsArtifacts.show("ajax-loader").cmd)
+    //ajaxEnd = Full(() => jsArtifacts.hide("ajax-loader").cmd)
 
     statelessDispatchTable.append(RestServices)
     AjaxDispatch.init()
@@ -60,13 +58,17 @@ class Boot extends Logger {
     // where to search snippet
     addToPackages("ca.williams_family")
 
+    User.service = new RedisUserService
+
+    for (us <- User.service) us.start
+
     Photo.service = new RedisPhotoService
 
     Photo.withService{ps =>
       ps.start
       info("Photo count: "+ps.countPhotos)
       ps.registerIndex(newActor[akka.InMemoryPhotoTimelineIndex])
-      info("Photos indexed: "+logTime("Getting all from index")(ps.getPhotoTimeline().map(_.size)))
+      //info("Photos indexed: "+logTime("Getting all from index")(ps.getPhotoTimeline().map(_.size)))
       //val dir = new java.io.File("output")
       //val filter = new java.io.FileFilter() { def accept(file: java.io.File): Boolean = { file.getName.endsWith(".json") } }
       //logTime("Loading production photos")(dir.listFiles(filter).toList.map(f => ps.setPhoto(Photo.deserialize(new String(readWholeFile(f), "UTF-8")))))
@@ -104,6 +106,3 @@ class Boot extends Logger {
   }
 
 }
-
-
-class RedisPhotoService extends akka.PhotoService with akka.RedisPhotoStorageFactory

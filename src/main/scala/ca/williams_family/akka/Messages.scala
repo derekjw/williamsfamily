@@ -5,6 +5,10 @@ import model._
 
 sealed trait Message
 
+case class SetUser(user: User) extends Message
+
+case class GetUser(id: Long) extends Message
+
 case object CountPhotos extends Message
 
 case object GetPhotoIds extends Message

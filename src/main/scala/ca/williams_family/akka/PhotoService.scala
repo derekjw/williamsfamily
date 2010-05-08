@@ -18,6 +18,8 @@ import se.scalablesolutions.akka.config._
 
 import net.liftweb.json._
 
+class RedisPhotoService extends PhotoService with RedisPhotoStorageFactory
+
 abstract class PhotoService extends Actor with Logger {
   faultHandler = Some(OneForOneStrategy(5, 5000))
   trapExit = List(classOf[Exception])
