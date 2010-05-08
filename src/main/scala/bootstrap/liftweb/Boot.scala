@@ -14,6 +14,8 @@ import se.scalablesolutions.akka.actor.Actor._
 import se.scalablesolutions.akka.dispatch.Futures._
 import se.scalablesolutions.akka.config.ScalaConfig._
 
+import net.liftweb.ext_api.facebook.{FacebookRestApi}
+
 import ca.williams_family._
 import model._
 import lib._
@@ -29,17 +31,31 @@ class Boot extends Logger {
     LiftRules.early.append {
       _.setCharacterEncoding("UTF-8")
     }
-    
-    // Display using XHtml Strict by default
+
     ResponseInfo.docType = {
+      case _ if S.skipDocType => Empty
       case _ if S.getDocType._1 => S.getDocType._2
-      case _ => Full(DocType.xhtmlStrict)
+      case _ => Full(DocType.html5)
     }
+
+    //this is really important for fb connect
+    useXhtmlMimeType = false 
+
+    println(Props.get("fbapikey"))
+
+    Props.get("fbapikey").foreach(FacebookRestApi.apiKey = _)
+    Props.get("fbsecret").foreach(FacebookRestApi.secret = _)
 
     jsArtifacts = JQuery14Artifacts
 
+    ajaxStart = Full(() => LiftRules.jsArtifacts.show("ajax-loader").cmd)
+
+    ajaxEnd = Full(() => LiftRules.jsArtifacts.hide("ajax-loader").cmd)
+
     statelessDispatchTable.append(RestServices)
     AjaxDispatch.init()
+
+    loggedInTest = Full(() => User.loggedIn_?)
 
     // where to search snippet
     addToPackages("ca.williams_family")
@@ -72,14 +88,15 @@ class Boot extends Logger {
     }
 
     // Build SiteMap
-    val entries =
-      Menu(Loc("Home", List("index"), "Home")) ::
-      Menu(Loc("Location", List("location"), "Location", Hidden)) :: 
-      Menu(Loc("Photo", List("photo"), "Photo", Hidden)) ::
-      Menu(Loc("Timeline", List("timeline"), "Photos")) ::
-      Menu(Loc("Timeline Photos", List("timeline-photos"), "Timeline Photos", Hidden)) ::
-      Nil
-    setSiteMap(SiteMap(entries:_*))
+    val entries = SiteMap(
+      Menu("Home") / "index",
+      Menu("Location") / "location" >> Hidden,
+      Menu("Photo") / "photo" >> Hidden,
+      Menu("Photos") / "timeline",
+      Menu("Timeline Photos") / "timeline-photos" >> Hidden,
+      Menu("cross site receiver") / "xd_receiver" >> Hidden)
+    
+    setSiteMap(entries)
 
     unloadHooks.append { () =>
       Photo.service.map(_.stop)
