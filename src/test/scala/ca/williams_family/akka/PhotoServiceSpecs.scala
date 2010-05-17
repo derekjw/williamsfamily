@@ -33,7 +33,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       Photo.service = new InMemoryPhotoService
       Photo.withService{ps =>
         ps.start
-        ps.registerIndex(newActor[InMemoryPhotoTimelineIndex])
+        ps.registerIndex(actorOf[InMemoryPhotoTimelineIndex])
       }
     }
     after {
@@ -46,7 +46,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       Photo.service = new InMemoryPhotoService
       Photo.withService{ps =>
         ps.start
-        ps.registerIndex(newActor[InMemoryPhotoTimelineIndex])
+        ps.registerIndex(actorOf[InMemoryPhotoTimelineIndex])
         awaitAll((1 to 10000).flatMap(i => genPhoto.sample.map(ps.setPhoto)).toList)
       }
     }
@@ -60,7 +60,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       Photo.service = new InMemoryPhotoService
       Photo.withService{ps =>
         ps.start
-        ps.registerIndex(newActor[InMemoryPhotoTimelineIndex])
+        ps.registerIndex(actorOf[InMemoryPhotoTimelineIndex])
         (1 to 10000).foreach(i => genPhoto.sample.foreach(ps.setPhoto))
       }
     }
@@ -133,7 +133,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
   "reindexing" ->- fullNonBlockingNoIndexes should {
     "return indexed values" in {
       Photo.withService{ps =>
-        ps.registerIndex(newActor[InMemoryPhotoTimelineIndex])
+        ps.registerIndex(actorOf[InMemoryPhotoTimelineIndex])
         Prop.forAll{p: Photo =>
           ps.setPhoto(p)
           val date = p.createDate.take(3)

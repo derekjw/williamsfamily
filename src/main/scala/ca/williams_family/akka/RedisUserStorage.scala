@@ -13,7 +13,7 @@ import se.scalablesolutions.akka.config.ScalaConfig._
 
 trait RedisUserStorageFactory {
   self: UserService =>
-  val storage: ActorID = spawnLink[RedisUserStorage]
+  val storage: ActorRef = spawnLink[RedisUserStorage]
 }
 
 class RedisUserStorage extends UserStorage with RedisHelpers {

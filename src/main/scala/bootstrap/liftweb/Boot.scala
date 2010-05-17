@@ -67,7 +67,7 @@ class Boot extends Logger {
     Photo.withService{ps =>
       ps.start
       info("Photo count: "+ps.countPhotos)
-      ps.registerIndex(newActor[akka.InMemoryPhotoTimelineIndex])
+      ps.registerIndex(actorOf[akka.InMemoryPhotoTimelineIndex])
       //info("Photos indexed: "+logTime("Getting all from index")(ps.getPhotoTimeline().map(_.size)))
       //val dir = new java.io.File("output")
       //val filter = new java.io.FileFilter() { def accept(file: java.io.File): Boolean = { file.getName.endsWith(".json") } }

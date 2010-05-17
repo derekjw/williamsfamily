@@ -13,7 +13,7 @@ import se.scalablesolutions.akka.config.ScalaConfig._
 
 trait RedisPhotoStorageFactory {
   self: PhotoService =>
-  val storage: ActorID = spawnLink[RedisPhotoStorage]
+  val storage: ActorRef = spawnLink[RedisPhotoStorage]
 }
 
 class RedisPhotoStorage extends PhotoStorage with RedisHelpers {

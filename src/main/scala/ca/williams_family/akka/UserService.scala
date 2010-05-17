@@ -19,7 +19,7 @@ abstract class UserService extends Actor with Logger {
   faultHandler = Some(OneForOneStrategy(5, 5000))
   trapExit = List(classOf[Exception])
 
-  val storage: ActorID
+  val storage: ActorRef
 
   def getUser(id: Long) =
     for {

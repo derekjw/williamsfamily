@@ -24,13 +24,13 @@ abstract class PhotoService extends Actor with Logger {
   faultHandler = Some(OneForOneStrategy(5, 5000))
   trapExit = List(classOf[Exception])
 
-  val storage: ActorID
+  val storage: ActorRef
 
-  private var indexes: Set[ActorID] = Set()
+  private var indexes: Set[ActorRef] = Set()
 
-  def registerIndex(index: ActorID) { registerIndex(List(index)) }
+  def registerIndex(index: ActorRef) { registerIndex(List(index)) }
 
-  def registerIndex(index: Iterable[ActorID]) {
+  def registerIndex(index: Iterable[ActorRef]) {
     index.foreach{i =>
       startLink(i)
       indexes += i
@@ -38,7 +38,7 @@ abstract class PhotoService extends Actor with Logger {
     reIndex(index)
   }
 
-  def reIndex(index: Iterable[ActorID]) {
+  def reIndex(index: Iterable[ActorRef]) {
     logTime("ReIndexing photos")(((self !! GetPhotoIds) ?~ "Timed out").asA[List[String]].getOrElse(Nil).foreach{pId =>
       for {
         photo <- getPhoto(pId)

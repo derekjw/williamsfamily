@@ -3,7 +3,7 @@ import FileUtilities._
 
 class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info)
 {
-  override def compileOptions = Unchecked :: super.compileOptions.toList
+  override def compileOptions = Optimize :: Unchecked :: super.compileOptions.toList
 
   override def ivyXML=
     <dependencies>
@@ -30,10 +30,8 @@ class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info)
 
   override def jettyPort = 8090
 
-  // For JRebel
-  override def scanDirectories = Nil
-
   override def repositories = Set(
+    "Fyrie Snapshots" at "http://repo.fyrie.net/snapshots",
     "Codehaus" at "http://repository.codehaus.org",
     "Codehaus Snapshots" at "http://snapshots.repository.codehaus.org",
     "jBoss" at "http://repository.jboss.org/maven2",
@@ -45,8 +43,5 @@ class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info)
     "Java.Net" at "http://download.java.net/maven/2",
     ScalaToolsSnapshots)
 
-  //val fyrieReleases = "Fyrie.net Releases" at "http://repo.fyrie.net/releases"
-  //val fyrieSnapshots = "Fyrie.net Snapshots" at "http://repo.fyrie.net/snapshots"
-  //val databinder = "Databinder" at "http://databinder.net/repo"
 }
 
