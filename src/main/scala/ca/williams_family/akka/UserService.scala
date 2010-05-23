@@ -16,18 +16,10 @@ import se.scalablesolutions.akka.config._
 class RedisUserService extends UserService with RedisUserStorageFactory
 
 abstract class UserService extends Actor with Logger {
-  faultHandler = Some(OneForOneStrategy(5, 5000))
-  trapExit = List(classOf[Exception])
+  self.faultHandler = Some(OneForOneStrategy(5, 5000))
+  self.trapExit = List(classOf[Exception])
 
   val storage: ActorRef
-
-  def getUser(id: Long) =
-    for {
-      res <- ((self !! GetUser(id)) ?~ "Timed out" ~> 500).asA[Option[User]]
-      user <- res ?~ "User Not Found" ~> 404
-    } yield user
-
-  def setUser(user: User): Future[Boolean] = self !!! SetUser(user)
 
   def receive = {
     case msg: SetUser => storage forward msg
@@ -35,7 +27,7 @@ abstract class UserService extends Actor with Logger {
   }
 
   override def shutdown = {
-    unlink(storage)
+    self.unlink(storage)
     storage.stop
   }
 }

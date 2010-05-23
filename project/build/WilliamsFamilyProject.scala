@@ -21,6 +21,7 @@ class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info)
   val slf4japi = "org.slf4j" % "slf4j-api" % "1.5.11"
   val jcloverslf4j = "org.slf4j" % "jcl-over-slf4j" % "1.5.11"
   val log4joverslf4j = "org.slf4j" % "log4j-over-slf4j" % "1.5.11"
+
   val logback = "ch.qos.logback" % "logback-classic" % "0.9.18"
   
   val specs = "org.scala-tools.testing" %% "specs" % "1.6.4" % "test->default"

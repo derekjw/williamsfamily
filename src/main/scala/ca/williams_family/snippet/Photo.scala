@@ -12,8 +12,7 @@ class Photo {
   def show(html: NodeSeq) : NodeSeq = {
     for {
       id <- S.param("id") ?~ "No Id supplied"
-      ps <- Photo.service
-      photo <- ps.getPhoto(id) ?~ "Photo not found"
+      photo <- Photo.get(id) ?~ "Photo not found"
       image <- photo.images.get("preview") ?~ "Preview image not found"
     } yield {
       bind("p", html, AttrBindParam("src", Text(image.uri), "src"))

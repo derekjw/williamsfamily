@@ -13,17 +13,16 @@ trait PhotoStorage extends Actor {
 
   def receive = {
     case CountPhotos =>
-      reply(size)
+      self.reply(size)
 
     case GetPhotoIds =>
-      reply(keys)
+      self.reply(keys)
 
     case SetPhoto(photo) =>
       setPhoto(photo, Photo.serialize(photo))
-      reply(true)
 
     case GetPhoto(id) =>
-      reply(getPhoto(id).map(Photo.deserialize))
+      self.reply(getPhoto(id).map(Photo.deserialize))
 
     case ForEachPhoto(f) =>
       foreach(v => f(Photo.deserialize(v)))

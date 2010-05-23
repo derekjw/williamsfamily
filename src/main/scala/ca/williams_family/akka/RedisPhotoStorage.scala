@@ -12,12 +12,12 @@ import se.scalablesolutions.akka.persistence.redis.RedisStorage
 import se.scalablesolutions.akka.config.ScalaConfig._
 
 trait RedisPhotoStorageFactory {
-  self: PhotoService =>
-  val storage: ActorRef = spawnLink[RedisPhotoStorage]
+  this: PhotoService =>
+  val storage: ActorRef = this.self.spawnLink[RedisPhotoStorage]
 }
 
 class RedisPhotoStorage extends PhotoStorage with RedisHelpers {
-  lifeCycle = Some(LifeCycle(Permanent))
+  self.lifeCycle = Some(LifeCycle(Permanent))
 
   private var photos = RedisStorage.getMap("photos")
 

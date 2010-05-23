@@ -3,6 +3,9 @@ package akka
 
 import model._
 
+import se.scalablesolutions.akka.actor._
+
+
 sealed trait Message
 
 case class SetUser(user: User) extends Message
@@ -14,6 +17,8 @@ case object CountPhotos extends Message
 case object GetPhotoIds extends Message
 
 case class SetPhoto(photo: Photo) extends Message
+
+case class SetPhotoTxn(photo: Photo, actors: List[ActorRef])
 
 case class GetPhoto(id: String) extends Message
 
@@ -33,7 +38,7 @@ object GetPhotoTimeline {
   }
 }
 
-case class RegisterPhotoIndex(index: PhotoIndex) extends Message
+case class ReIndex(photo: Photo) extends Message
 
 case class ForEachPhoto(fun: (Photo) => Unit) extends Message
 

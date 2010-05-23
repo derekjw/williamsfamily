@@ -23,14 +23,11 @@ trait PhotoTimelineIndex extends PhotoIndex {
 
   def receive = {
     case GetPhotoTimeline(y,m,d) =>
-      reply(get(y,m,d))
+      self.reply(get(y,m,d))
     
     case SetPhoto(DateAndId(k,v)) =>
       set(k,v)
-      reply_?(true)
 
-    case SetPhoto(_) =>
-      reply_?(false)
   }
 
   object DateAndId {

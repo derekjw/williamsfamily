@@ -21,8 +21,7 @@ object Timeline {
 class Timeline {
   def list(xhtml: NodeSeq): NodeSeq =
     for {
-      ps <- Photo.service
-      tl <- ps.getPhotoTimeline()
+      tl <- Photo.timeline()
     } yield {
       for {
         (year, months) <- tl.groupByYMD.map{case (y,m) => (y -> m.keysIterator.toList)}.toSeq.reverse
@@ -39,14 +38,13 @@ class Timeline {
   
   def photos(xhtml: NodeSeq): NodeSeq =
     for {
-      ps <- Photo.service
       year <- S.param("year").flatMap(asInt)
       month <- S.param("month").flatMap(asInt)
-      tl <- ps.getPhotoTimeline(year,month)
+      tl <- Photo.timeline(year,month)
     } yield {
       for {
         pId <- tl.toSeq
-        photo <- ps.getPhoto(pId)
+        photo <- Photo.get(pId)
         thumb <- photo.images.get("thumbnail")
       } yield {
         bind("t", xhtml,

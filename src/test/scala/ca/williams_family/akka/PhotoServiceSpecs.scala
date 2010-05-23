@@ -7,6 +7,7 @@ import ca.williams_family.model.specs.Generators._
 
 import org.specs._
 import specification.Context
+import org.specs.util.Duration
 
 import org.scalacheck._
 
@@ -24,123 +25,68 @@ import java.io.{File, FileFilter}
 
 import model._
 
-class InMemoryPhotoService extends PhotoService with InMemoryPhotoStorageFactory
+class InMemoryPhotoService extends PhotoService
+  with InMemoryPhotoStorageFactory
+  with InMemoryPhotoTimelineIndexFactory
 
 class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
     
   val empty = new Context {
     before {
-      Photo.service = new InMemoryPhotoService
-      Photo.withService{ps =>
-        ps.start
-        ps.registerIndex(actorOf[InMemoryPhotoTimelineIndex])
-      }
+      Photo.service = actorOf[InMemoryPhotoService]
     }
     after {
-      Photo.withService(_.stop)
+      Photo.stopService
     }
   }
 
   val full = new Context {
     before {
-      Photo.service = new InMemoryPhotoService
-      Photo.withService{ps =>
-        ps.start
-        ps.registerIndex(actorOf[InMemoryPhotoTimelineIndex])
-        awaitAll((1 to 10000).flatMap(i => genPhoto.sample.map(ps.setPhoto)).toList)
-      }
+      Photo.service = actorOf[InMemoryPhotoService]
+      (1 to 10000).foreach(i => genPhoto.sample.foreach(Photo.set))
     }
     after {
-      Photo.withService(_.stop)
+      Photo.stopService
     }
   }
 
-  val fullNonBlocking = new Context {
+/*  val production = new Context {
     before {
-      Photo.service = new InMemoryPhotoService
-      Photo.withService{ps =>
-        ps.start
-        ps.registerIndex(actorOf[InMemoryPhotoTimelineIndex])
-        (1 to 10000).foreach(i => genPhoto.sample.foreach(ps.setPhoto))
-      }
+      Photo.service = actorOf[InMemoryPhotoService]
+      val dir = new File("output")
+      val filter = new FileFilter() { def accept(file: File): Boolean = { file.getName.endsWith(".json") } }
+      logTime("Loading production photos")(awaitAll(dir.listFiles(filter).toList.flatMap(f => Photo.set(Photo.deserialize(new String(readWholeFile(f), "UTF-8"))))))
     }
     after {
-      Photo.withService(_.stop)
+      Photo.stopService
     }
-  }
-
-  val fullNonBlockingNoIndexes = new Context {
-    before {
-      Photo.service = new InMemoryPhotoService
-      Photo.withService{ps =>
-        ps.start
-        (1 to 10000).flatMap(i => genPhoto.sample.map(ps.setPhoto))
-      }
-    }
-    after {
-      Photo.withService(_.stop)
-    }
-  }
-
-  val production = new Context {
-    before {
-      Photo.service = new InMemoryPhotoService
-      Photo.withService{ps =>
-        ps.start
-        val dir = new File("output")
-        val filter = new FileFilter() { def accept(file: File): Boolean = { file.getName.endsWith(".json") } }
-        logTime("Loading production photos")(awaitAll(dir.listFiles(filter).toList.map(f => ps.setPhoto(Photo.deserialize(new String(readWholeFile(f), "UTF-8"))))))
-      }
-    }
-    after {
-      Photo.withService(_.stop)
-    }
-  }
+  }*/
   
   "photo storage" ->- empty should {
     "have no photos stored" in {
-      Photo.withService{ps =>
-        ps.countPhotos must beFull.which(_ must_== 0)
-      }
+      Photo.count must beFull.which(_ must_== 0)
     }
     "insert photos" in {
-      Photo.withService{ps =>
-        Prop.forAll{p: Photo => {
-          ps.setPhoto(p).await
-          ps.getPhoto(p.id) == Full(p)
-        }} must pass
-        ps.countPhotos must beFull.which(_ must_== 100)
-      }
+      Prop.forAll{p: Photo =>
+        Photo.set(p)
+        Photo.get(p.id) must beFull.which{_ must_== p}
+        true
+      } must pass
+      Photo.count must beFull.which(_ must_== 100)
     }
   }
 
-  "photo timeline" ->- fullNonBlocking should {
+  "photo timeline" ->- full should {
     "return ids of inserted photos" in {
-      Photo.withService{ps =>
-        Prop.forAll{p: Photo => {
-          ps.setPhoto(p).awaitBlocking
-          val date = p.createDate.take(3)
-          ps.getPhotoTimeline(date).exists(_(p.id)) && ps.getPhotoTimeline(List(date.head, date.tail.head)).exists(_(p.id)) && ps.getPhotoTimeline(List(date.head)).exists(_(p.id))          
-        }} must pass
-        ps.countPhotos must_== ps.getPhotoTimeline().map(_.size)
-        var pIds = Set[String]()
-        awaitAll((1 to 1000).flatMap(i => genPhoto.sample.map{p => pIds += p.id; ps.setPhoto(p)}).toList)
-        logTime("Get "+pIds.size+" photos")(pIds.map(pId => ps.getPhoto(pId))).foreach(_ must beFull)
-      }
-    }
-  }
-
-  "reindexing" ->- fullNonBlockingNoIndexes should {
-    "return indexed values" in {
-      Photo.withService{ps =>
-        ps.registerIndex(actorOf[InMemoryPhotoTimelineIndex])
-        Prop.forAll{p: Photo =>
-          ps.setPhoto(p)
-          val date = p.createDate.take(3)
-          ps.getPhotoTimeline(date).exists(_(p.id)) && ps.getPhotoTimeline(List(date.head, date.tail.head)).exists(_(p.id)) && ps.getPhotoTimeline(List(date.head)).exists(_(p.id))
-        } must pass
-        ps.countPhotos must_== ps.getPhotoTimeline(Nil).map(_.size)
-      }
+      Prop.forAll{p: Photo =>
+        Photo.set(p)
+        val date = p.createDate.take(3)
+        Photo.timeline(date).exists(_(p.id)) && Photo.timeline(List(date.head, date.tail.head)).exists(_(p.id)) && Photo.timeline(List(date.head)).exists(_(p.id))
+      } must pass
+      Photo.count must_== Photo.timeline().map(_.size)
+      var pIds = Set[String]()
+      (1 to 1000).foreach(i => genPhoto.sample.foreach{p => pIds += p.id; Photo.set(p)})
+      logTime("Get "+pIds.size+" photos")(pIds.map(pId => Photo.get(pId))).foreach(_ must beFull)
     }
   }
 

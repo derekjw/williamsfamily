@@ -58,21 +58,15 @@ class Boot extends Logger {
     // where to search snippet
     addToPackages("ca.williams_family")
 
-    User.service = new RedisUserService
+    User.service = actorOf[RedisUserService]
 
-    for (us <- User.service) us.start
+    Photo.service = actorOf[RedisPhotoService]
 
-    Photo.service = new RedisPhotoService
-
-    Photo.withService{ps =>
-      ps.start
-      info("Photo count: "+ps.countPhotos)
-      ps.registerIndex(actorOf[akka.InMemoryPhotoTimelineIndex])
-      //info("Photos indexed: "+logTime("Getting all from index")(ps.getPhotoTimeline().map(_.size)))
-      //val dir = new java.io.File("output")
-      //val filter = new java.io.FileFilter() { def accept(file: java.io.File): Boolean = { file.getName.endsWith(".json") } }
-      //logTime("Loading production photos")(dir.listFiles(filter).toList.map(f => ps.setPhoto(Photo.deserialize(new String(readWholeFile(f), "UTF-8")))))
-    }
+    info("Photo count: "+Photo.count)
+    info("Photos indexed: "+logTime("Getting all from index")(Photo.timeline().map(_.size)))
+    //val dir = new java.io.File("output")
+    //val filter = new java.io.FileFilter() { def accept(file: java.io.File): Boolean = { file.getName.endsWith(".json") } }
+    //logTime("Loading production photos")(dir.listFiles(filter).toList.map(f => Photo.set(Photo.deserialize(new String(readWholeFile(f), "UTF-8")))))
 
     statefulRewrite.prepend {
       case
@@ -101,7 +95,8 @@ class Boot extends Logger {
     setSiteMap(entries)
 
     unloadHooks.append { () =>
-      Photo.service.map(_.stop)
+      Photo.stopService
+      User.stopService
     }
   }
 

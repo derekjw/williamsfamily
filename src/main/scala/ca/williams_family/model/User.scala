@@ -6,6 +6,7 @@ import xml.{Node}
 import akka._
 
 import net.liftweb.common._
+import Box._
 import net.liftweb.util._
 import net.liftweb.http._
 import net.liftweb.json._
@@ -13,6 +14,9 @@ import JsonAST._
 import JsonDSL._
 import JsonParser._
 import Serialization.{read, write}
+
+import se.scalablesolutions.akka.actor._
+import se.scalablesolutions.akka.dispatch._
 
 import Helpers._
 
@@ -24,11 +28,30 @@ case class User(id: Long, userName: String, name: String, photoUri: String) {
 }
 
 object User {
-  private var userService: Box[UserService] = Failure("User service not set")
+  private val noService = Failure("User service not set")
+  private var _service: Box[ActorRef] = noService
 
-  def service = userService
+  def service = _service
 
-  def service_=(us: UserService): Unit = userService = Full(us)
+  def service_=(us: ActorRef): Unit = _service = Full(us.start)
+
+  def stopService: Unit = {
+    _service.foreach(_.stop)
+    _service = noService
+  }
+
+  def get(id: Long) =
+    for {
+      s <- service
+      res <- ((s !! GetUser(id)) ?~ "Timed out" ~> 500).asA[Option[User]]
+      user <- res ?~ "User Not Found" ~> 404
+    } yield user
+
+  def set(user: User): Box[Future[Boolean]] = 
+    for {
+      s <- service
+    } yield {s !!! SetUser(user)}
+
 
   def serialize(in: User) = {
     implicit val formats = DefaultFormats
@@ -52,9 +75,8 @@ object User {
     fbSession(Full(session))
     for {
       user <- fromXml(FacebookClient.fromSession(session).getInfo(asLong(session.uid), Name, Username, SquarePic))
-      us <- service
     } {
-      us.setUser(user)
+      set(user)
       logUserIn(user)
     }
     currentUser
@@ -84,9 +106,8 @@ object User {
 
   private object curUser extends RequestVar[Box[User]](
     for {
-      us <- service
       id <- curUserId
-      user <- us.getUser(id)
+      user <- get(id)
     } yield user)
 
   def currentUser: Box[User] = curUser.is

@@ -17,27 +17,26 @@ trait BoxMatchers {
   }
 
   abstract class BoxMatcher[T] extends Matcher[Box[T]] {
-    private var whichFunction: Box[T => Boolean] = Empty
+    private var whichFunction: Option[T => Boolean] = None
     def fullApply(value: => Box[T]): (Boolean, String, String)
 
     def which(g: T => Boolean) = {
-      whichFunction = Full(g)
+      whichFunction = Some(g)
       this
     }
     override def apply(a: => Box[T]) =
-      if (whichFunction == Full(null))
+      if (whichFunction == Some(null))
         (false, "the 'which' property is a not a null function", "the 'which' property is a null function")
       else
         whichFunction match {
-          case Empty => fullApply(a)
-          case Failure(_,_,_) => fullApply(a)
-          case Full(g) => (
+          case None => fullApply(a)
+          case Some(g) => (
             a match {
               case Full(x) => g(x)
               case _ => false
             },
-            description.getOrElse("there") + " is a Full(x) verifying the given property",
-            description.getOrElse("there") + " is no Full(x) verifying the given property")
+            description.getOrElse(a.toString) + " is a Full(x) verifying the given property",
+            description.getOrElse(a.toString) + " is not a Full(x) verifying the given property")
         }
   }
 }

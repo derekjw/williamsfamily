@@ -4,12 +4,17 @@ package model
 import akka._
 
 import net.liftweb.common._
+import Box._
+import net.liftweb.util.Helpers._
 import net.liftweb.json._
 import JsonAST._
 import JsonDSL._
 import JsonParser._
 import Serialization.{read, write}
 import org.apache.commons.math.util.MathUtils
+
+import se.scalablesolutions.akka.actor._
+import se.scalablesolutions.akka.dispatch._
 
 case class Photo(id: String, createDate: List[Int], exposure: Rational, aperature: Rational, iso: Int, focalLength: Rational, width: Int, height: Int, images: Map[String, Image]) {
   def uri = "/photos/"+id
@@ -22,13 +27,56 @@ case class Photo(id: String, createDate: List[Int], exposure: Rational, aperatur
 }
 
 object Photo {
-  private var photoService: Box[PhotoService] = Failure("Photo service not set")
+  private val noService = Failure("Photo service not set")
+  private var _service: Box[ActorRef] = noService
 
-  def service = photoService
+  def service = _service
 
-  def service_=(ps: PhotoService): Unit = photoService = Full(ps)
+  def service_=(ps: ActorRef): Unit = {
+    _service = Full(ps.start)
+//    reIndex
+  }
 
-  def withService[T](f: (PhotoService) => T): Option[T] = photoService.map(f)
+  def stopService: Unit = {
+    _service.foreach(_.stop)
+    _service = noService
+  }
+
+
+  def reIndex: Unit =
+    logTime("ReIndexing photos"){
+      for {
+        s <- service
+        id <- ((s !! GetPhotoIds) ?~ "Timed out").asA[List[String]].getOrElse(Nil)
+        photo <- get(id)
+      } { s ! ReIndex(photo) }
+    }
+
+  def count =
+    for {
+      s <- service
+      res <- ((s !! CountPhotos) ?~ "Timed out").asA[java.lang.Integer].map(_.intValue)
+    } yield res
+
+  def set(photo: Photo) =
+    for {
+      s <- service
+    } s ! SetPhoto(photo)
+
+  def get(id: String) =
+    for {
+      s <- service
+      res <- ((s !! GetPhoto(id)) ?~ "Timed out" ~> 500).asA[Option[Photo]] ?~ "Invalid Response"
+      photo <-res ?~ "Photo Not Found" ~> 404
+    } yield photo
+
+  def timeline(key: List[Int]): Box[PhotoTimeline] =
+    for {
+      s <- service
+      res <- ((s !! GetPhotoTimeline(key)) ?~ "Timed out").asA[PhotoTimeline] ?~ "Invalid Response"
+    } yield res
+
+  def timeline(year: Int = 0, month: Int = 0, day: Int = 0): Box[PhotoTimeline] = timeline(List(year,month,day).filterNot(_ == 0))
 
   def serialize(in: Photo) = {
     implicit val formats = DefaultFormats
@@ -89,7 +137,7 @@ object Rational {
   def apply(n: Int = 1, d: Int = 1): Rational = {
     val m = if (d < 0) (-1) else 1
     val g = if (n == 1 || d == 1) (1) else (MathUtils.gcd(n, d))
-    if (g == 0) (new Rational(0,0)) else (new Rational(m * n / g, m * d / g))
+      if (g == 0) (new Rational(0,0)) else (new Rational(m * n / g, m * d / g))
   }
   def unapply(in: Any): Option[(Int,Int)] = in match {
     case r: Rational => Some((r.n, r.d))
@@ -99,7 +147,7 @@ object Rational {
 
 class Rational private (val n: Int, val d: Int) {
   override def toString = if (d > 1) (n + " / " + d) else (n.toString)
-  override def hashCode: Int = 37 * (37 * 17 * n) * d
+    override def hashCode: Int = 37 * (37 * 17 * n) * d
   override def equals(in: Any): Boolean = in match {
     case Rational(a,b) if n == a && d == b => true
     case _ => false

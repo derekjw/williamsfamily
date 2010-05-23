@@ -23,8 +23,7 @@ object RestServices extends RestHelper {
 
   def getTimeline(date: List[Int], after: String): Box[JValue] =
     for {
-      ps <- Photo.service
-      res <- ps.getPhotoTimeline(date)
+      res <- Photo.timeline(date)
     } yield { JArray(res.dropWhile(_ <= after).take(1000).map(JString).toList) }
 
   object TimelineDate {
@@ -44,8 +43,7 @@ object RestServices extends RestHelper {
 
   def getPhoto(photoId: String): Box[JValue] =
     for {
-      ps <- Photo.service
-      photo <- ps.getPhoto(photoId) ?~ "Photo not found" ~> 404
+      photo <- Photo.get(photoId) ?~ "Photo not found" ~> 404
     } yield photo.toJson
 
 }

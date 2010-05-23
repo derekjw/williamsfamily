@@ -12,12 +12,12 @@ import se.scalablesolutions.akka.persistence.redis.RedisStorage
 import se.scalablesolutions.akka.config.ScalaConfig._
 
 trait RedisUserStorageFactory {
-  self: UserService =>
-  val storage: ActorRef = spawnLink[RedisUserStorage]
+  this: UserService =>
+  val storage: ActorRef = this.self.spawnLink[RedisUserStorage]
 }
 
 class RedisUserStorage extends UserStorage with RedisHelpers {
-  lifeCycle = Some(LifeCycle(Permanent))
+  self.lifeCycle = Some(LifeCycle(Permanent))
 
   private var users = RedisStorage.getMap("users")
 

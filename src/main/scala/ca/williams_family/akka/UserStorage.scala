@@ -14,10 +14,10 @@ trait UserStorage extends Actor {
   def receive = {
     case SetUser(user) =>
       setUser(user, User.serialize(user))
-      reply(true)
+      self.reply(true)
 
     case GetUser(id) =>
-      reply(getUser(id).map(User.deserialize))
+      self.reply(getUser(id).map(User.deserialize))
   }
 
   def get(k: K): Option[V]
