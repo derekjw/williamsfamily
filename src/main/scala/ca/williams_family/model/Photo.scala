@@ -58,12 +58,10 @@ object Photo {
       res <- ((s !! CountPhotos) ?~ "Timed out").asA[java.lang.Integer].map(_.intValue)
     } yield res
 
-  def set(photo: Photo): Box[Future[Unit]] =
+  def set(photo: Photo): Unit =
     for {
       s <- service
-    } yield {
-      s !!! SetPhoto(photo)
-    }
+    } s ! SetPhoto(photo)
 
   def get(id: String) =
     for {

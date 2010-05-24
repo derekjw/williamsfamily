@@ -27,7 +27,6 @@ trait PhotoTimelineIndex extends PhotoIndex {
     
     case SetPhoto(DateAndId(k,v)) =>
       set(k,v)
-      self.reply(true)
 
   }
 

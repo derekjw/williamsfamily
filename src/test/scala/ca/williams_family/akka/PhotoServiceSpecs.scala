@@ -68,7 +68,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
     }
     "insert photos" in {
       Prop.forAll{p: Photo =>
-        Photo.set(p) //.map(_.await)
+        Photo.set(p)
         Photo.get(p.id) must beFull.which{_ must_== p}
         true
       } must pass
@@ -79,7 +79,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
   "photo timeline" ->- full should {
     "return ids of inserted photos" in {
       Prop.forAll{p: Photo =>
-        Photo.set(p) //.map(_.await)
+        Photo.set(p)
         val date = p.createDate.take(3)
         Photo.timeline(date).exists(_(p.id)) &&
         Photo.timeline(List(date.head, date.tail.head)).exists(_(p.id)) &&
