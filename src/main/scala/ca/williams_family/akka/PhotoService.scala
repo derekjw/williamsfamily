@@ -9,7 +9,6 @@ import net.liftweb.util.Helpers._
 
 import model._
 
-import se.scalablesolutions.akka.stm.Transaction.{Global,Local}
 import se.scalablesolutions.akka.actor._
 import Actor._
 import se.scalablesolutions.akka.dispatch._
@@ -23,8 +22,8 @@ class RedisPhotoService extends PhotoService
 with RedisPhotoStorageFactory
 with InMemoryPhotoTimelineIndexFactory
 
-abstract class PhotoService extends Actor with Logger {
-  self.faultHandler = Some(OneForOneStrategy(5, 5000))
+abstract class PhotoService extends Transactor with Logger {
+  self.faultHandler = Some(AllForOneStrategy(5, 5000))
   self.trapExit = List(classOf[Exception])
 
   val storage: ActorRef
@@ -36,8 +35,7 @@ abstract class PhotoService extends Actor with Logger {
     case msg: ForEachPhoto => storage forward msg
     case GetPhotoIds => storage forward GetPhotoIds
     case msg: SetPhoto =>
-      storage ! msg
-      timelineIndex ! msg
+      self.reply_?(awaitAll(List(storage !!! msg, timelineIndex !!! msg)))
     case ReIndex(photo) => timelineIndex ! SetPhoto(photo)
     case msg: GetPhoto => storage forward msg
     case msg: GetPhotos => storage forward msg

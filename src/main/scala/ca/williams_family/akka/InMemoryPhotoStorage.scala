@@ -19,17 +19,17 @@ class InMemoryPhotoStorage extends PhotoStorage {
 //  self.makeTransactionRequired
   self.lifeCycle = Some(LifeCycle(Permanent))
 
-  private val photos = TransactionalState.newMap[K, V]
+  val photos = TransactionalState.newMap[K, V]
 
-  def get(k: K): Option[V] = Local.atomic { photos.get(k) }
+  def get(k: K): Option[V] = photos.get(k)
 
-  def put(k: K, v: V): Unit = Global.atomic { photos.put(k, v) }
+  def put(k: K, v: V): Unit = photos.put(k, v)
 
-  def size: Int = Local.atomic { photos.size }
+  def size: Int = photos.size
 
-  def keys: Iterable[K] = Local.atomic { photos.keysIterator.toList }
+  def keys: Iterable[K] = photos.keysIterator.toList
 
-  def foreach(f: (V) => Unit) = Local.atomic { photos.valuesIterator.foreach(f) }
+  def foreach(f: (V) => Unit) = photos.valuesIterator.foreach(f)
 
 }
 

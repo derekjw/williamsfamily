@@ -7,7 +7,7 @@ import model._
 
 import se.scalablesolutions.akka.actor._
 
-trait PhotoStorage extends Actor {
+trait PhotoStorage extends Transactor {
   type V = String
   type K = String
 
@@ -20,6 +20,7 @@ trait PhotoStorage extends Actor {
 
     case SetPhoto(photo) =>
       setPhoto(photo, Photo.serialize(photo))
+      self.reply(true)
 
     case GetPhoto(id) =>
       self.reply(getPhoto(id).map(Photo.deserialize))

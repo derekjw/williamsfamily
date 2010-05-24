@@ -18,11 +18,11 @@ class InMemoryPhotoTimelineIndex extends PhotoTimelineIndex {
 
   self.lifeCycle = Some(LifeCycle(Permanent))
 
-  private val index = TransactionalState.newRef(new Col)
+  val index = TransactionalState.newRef(new Col)
 
-  private val keys = TransactionalState.newMap[String, String]
+  val keys = TransactionalState.newMap[String, String]
 
-  def get(year: Option[Int], month: Option[Int], day: Option[Int]): PhotoTimeline = Local.atomic {
+  def get(year: Option[Int], month: Option[Int], day: Option[Int]): PhotoTimeline =
     PhotoTimeline(((year, month, day) match {
       case (Some(y), Some(m), Some(d)) => index.get.map(_.range((y,m,d),(y,m,d+1)))
       case (Some(y), Some(m), None) => index.get.map(_.range((y,m,1),(y,m+1,1)))
@@ -30,11 +30,10 @@ class InMemoryPhotoTimelineIndex extends PhotoTimelineIndex {
       case (None, None, None) => index.get
       case _ => None
     }).getOrElse(new Col))
-  }
 
-  def set(k: K, v: V): Unit = Global.atomic {
+
+  def set(k: K, v: V): Unit =
     index.alter(i => i + (k -> (i.getOrElse(k, new VSet) + v)))
-  }
 
 }
 

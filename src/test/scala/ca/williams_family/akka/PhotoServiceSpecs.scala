@@ -68,7 +68,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
     }
     "insert photos" in {
       Prop.forAll{p: Photo =>
-        Photo.set(p)
+        Photo.set(p) //.map(_.await)
         Photo.get(p.id) must beFull.which{_ must_== p}
         true
       } must pass
@@ -79,9 +79,11 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
   "photo timeline" ->- full should {
     "return ids of inserted photos" in {
       Prop.forAll{p: Photo =>
-        Photo.set(p)
+        Photo.set(p) //.map(_.await)
         val date = p.createDate.take(3)
-        Photo.timeline(date).exists(_(p.id)) && Photo.timeline(List(date.head, date.tail.head)).exists(_(p.id)) && Photo.timeline(List(date.head)).exists(_(p.id))
+        Photo.timeline(date).exists(_(p.id)) &&
+        Photo.timeline(List(date.head, date.tail.head)).exists(_(p.id)) &&
+        Photo.timeline(List(date.head)).exists(_(p.id))
       } must pass
       Photo.count must_== Photo.timeline().map(_.size)
       var pIds = Set[String]()
@@ -89,16 +91,5 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       logTime("Get "+pIds.size+" photos")(pIds.map(pId => Photo.get(pId))).foreach(_ must beFull)
     }
   }
-
-/*  "production photos" ->- production should {
-    "have proper count" in {
-      ps.registerIndex(new InMemoryPhotoDateIndex)
-      ps.countPhotos must beFull.which(_ must_== 17454)
-      logTime("Getting index for all photos")(ps.getPhotosByDate(Nil)) must beFull.which(_.size must_== 17454)
-      logTime("Getting index for year")(ps.getPhotosByDate(List(2009))) must beFull.which(_.size must_== 3917)
-      logTime("Getting index for month")(ps.getPhotosByDate(List(2009,12))) must beFull.which(_.size must_== 247)
-      logTime("Getting index for day")(ps.getPhotosByDate(List(2009,12,25))) must beFull.which(_.size must_== 157)
-    }
-  }*/
 }
 
