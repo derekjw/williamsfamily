@@ -60,13 +60,15 @@ class Boot extends Logger {
 
     User.service = actorOf[RedisUserService]
 
-    Photo.service = actorOf[RedisPhotoService]
+    Photo.service = logTime("Initializing photo service")(actorOf[RedisPhotoService])
 
     info("Photo count: "+Photo.count)
-    info("Photos indexed: "+logTime("Getting all from index")(Photo.timeline().map(_.size)))
+    info("Photos indexed: "+Photo.timeline().map(_.size))
     //val dir = new java.io.File("output")
     //val filter = new java.io.FileFilter() { def accept(file: java.io.File): Boolean = { file.getName.endsWith(".json") } }
-    //logTime("Loading production photos")(dir.listFiles(filter).toList.map(f => Photo.set(Photo.deserialize(new String(readWholeFile(f), "UTF-8")))))
+    //logTime("Loading production photos")(dir.listFiles(filter).toList.map{f =>
+      //Photo.set(Photo.deserialize(new String(readWholeFile(f), "UTF-8")))
+    //})
 
     statefulRewrite.prepend {
       case

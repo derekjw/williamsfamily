@@ -20,7 +20,7 @@ import net.liftweb.json._
 
 class RedisPhotoService extends PhotoService
 with RedisPhotoStorageFactory
-with InMemoryPhotoTimelineIndexFactory
+with RedisPhotoTimelineIndexFactory
 
 abstract class PhotoService extends Transactor with Logger {
   self.faultHandler = Some(AllForOneStrategy(5, 5000))
