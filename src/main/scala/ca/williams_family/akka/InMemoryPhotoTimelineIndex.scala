@@ -4,9 +4,8 @@ package akka
 import model._
 
 import se.scalablesolutions.akka.actor._
-import se.scalablesolutions.akka.stm._
-import Transaction.{Global,Local}
 import se.scalablesolutions.akka.config.ScalaConfig._
+import se.scalablesolutions.akka.stm.HashTrie
 
 trait InMemoryPhotoTimelineIndexFactory {
   this: PhotoService =>
@@ -18,23 +17,22 @@ class InMemoryPhotoTimelineIndex extends PhotoTimelineIndex {
 
   self.lifeCycle = Some(LifeCycle(Permanent))
 
-  val index = TransactionalState.newRef(new Col)
+  var index = new Col
 
-  val keys = TransactionalState.newMap[V, K]
+  var keys = new HashTrie[V, K]
 
   def get(year: Option[Int], month: Option[Int], day: Option[Int]): PhotoTimeline =
-    PhotoTimeline(((year, month, day) match {
-      case (Some(y), Some(m), Some(d)) => index.get.map(_.range((y,m,d),(y,m,d+1)))
-      case (Some(y), Some(m), None) => index.get.map(_.range((y,m,1),(y,m+1,1)))
-      case (Some(y), None, None) => index.get.map(_.range((y,1,1),(y+1,1,1)))
-      case (None, None, None) => index.get
-      case _ => None
-    }).getOrElse(new Col))
-
+    PhotoTimeline((year, month, day) match {
+      case (Some(y), Some(m), Some(d)) => index.range((y,m,d),(y,m,d+1))
+      case (Some(y), Some(m), None) => index.range((y,m,1),(y,m+1,1))
+      case (Some(y), None, None) => index.range((y,1,1),(y+1,1,1))
+      case (None, None, None) => index
+      case _ => new Col
+    })
 
   def set(k: K, v: V): Unit = {
-    keys.put(v, k)
-    index.alter(i => i + (k -> (i.getOrElse(k, new VSet) + v)))
+    keys += (v -> k)
+    index += (k -> (index.getOrElse(k, new VSet) + v))
   }
 
 }

@@ -24,8 +24,6 @@ trait PhotoStorage extends Transactor {
     case GetPhoto(id) =>
       self.reply(getPhoto(id).map(Photo.deserialize))
 
-    case ForEachPhoto(f) =>
-      foreach(v => f(Photo.deserialize(v)))
   }
 
   def get(k: K): Option[V]
@@ -34,9 +32,7 @@ trait PhotoStorage extends Transactor {
 
   def size: Int
 
-  def keys: Iterable[K]
-
-  def foreach(f: (V) => Unit): Unit
+  def keys: Iterator[K]
 
   def setPhoto(photo: Photo, v: V): Unit = put(photo.id, v)
 

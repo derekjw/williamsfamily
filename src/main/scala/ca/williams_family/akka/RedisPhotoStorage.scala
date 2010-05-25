@@ -6,10 +6,9 @@ import net.liftweb.common._
 import model._
 
 import se.scalablesolutions.akka.actor._
-import se.scalablesolutions.akka.stm._
-import Transaction.Global._
-import se.scalablesolutions.akka.persistence.redis.RedisStorage
 import se.scalablesolutions.akka.config.ScalaConfig._
+
+import com.redis._
 
 trait RedisPhotoStorageFactory {
   this: PhotoService =>
@@ -19,20 +18,25 @@ trait RedisPhotoStorageFactory {
 class RedisPhotoStorage extends PhotoStorage with RedisHelpers {
   self.lifeCycle = Some(LifeCycle(Permanent))
 
-  private var photos = RedisStorage.getMap("photos")
+  val r = new RedisClient("localhost", 6379)
 
-  def get(k: K): Option[V] = atomic { photos.get(k).map(asString) }
+  val ns = "photo"
+  val keySet = "photos"
 
-  def put(k: K, v: V): Unit = atomic { photos.put(k, v) }
+  def key(k: K) = ns+":"+k
 
-  def size: Int = atomic { photos.size }
+  def get(k: K): Option[V] = r.get(key(k))
 
-  def keys: Iterable[K] = atomic { photos.keysIterator.map(asString).toList }
+  def put(k: K, v: V): Unit = {
+    r.multi
+    r.set(key(k), v)
+    r.sadd(keySet, k)
+    r.exec
+  }
 
-  def foreach(f: (V) => Unit) = atomic { photos.valuesIterator.map(asString).foreach(f) }
+  def size: Int = r.scard(keySet).getOrElse(0)
 
-  override def postRestart(reason: Throwable) =
-    photos = RedisStorage.getMap("photos")
+  def keys: Iterator[K] = r.smembers(keySet).map(_.iterator.flatMap(_.iterator)).getOrElse(Iterator.empty)
 
 }
 

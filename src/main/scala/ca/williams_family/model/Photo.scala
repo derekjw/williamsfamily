@@ -32,25 +32,12 @@ object Photo {
 
   def service = _service
 
-  def service_=(ps: ActorRef): Unit = {
-    _service = Full(ps.start)
-//    reIndex
-  }
+  def service_=(ps: ActorRef): Unit = _service = Full(ps.start)
 
   def stopService: Unit = {
     _service.foreach(_.stop)
     _service = noService
   }
-
-
-  def reIndex: Unit =
-    logTime("ReIndexing photos"){
-      for {
-        s <- service
-        id <- ((s !! GetPhotoIds) ?~ "Timed out").asA[List[String]].getOrElse(Nil)
-        photo <- get(id)
-      } { s ! ReIndex(photo) }
-    }
 
   def count =
     for {

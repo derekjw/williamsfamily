@@ -18,8 +18,6 @@ case object GetPhotoIds extends Message
 
 case class SetPhoto(photo: Photo) extends Message
 
-case class SetPhotoTxn(photo: Photo, actors: List[ActorRef])
-
 case class GetPhoto(id: String) extends Message
 
 case class GetPhotos(ids: List[String]) extends Message
@@ -37,9 +35,3 @@ object GetPhotoTimeline {
     case Nil => apply()
   }
 }
-
-case class ReIndex(photo: Photo) extends Message
-
-case class ForEachPhoto(fun: (Photo) => Unit) extends Message
-
-case class WithPhoto(fun: (Photo) => Unit) extends Message
