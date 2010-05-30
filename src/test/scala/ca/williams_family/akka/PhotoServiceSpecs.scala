@@ -13,9 +13,10 @@ import org.scalacheck._
 
 import scala.collection.SortedSet
 
-import se.scalablesolutions.akka.actor.{Actor,ActorRegistry}
+import se.scalablesolutions.akka.actor.{Actor,ActorRegistry,Agent}
 import Actor._
 import se.scalablesolutions.akka.dispatch.Futures._
+import se.scalablesolutions.akka.stm.Transaction.Global._
 
 import net.liftweb.common._
 import net.liftweb.util.IoHelpers._
@@ -43,7 +44,7 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
   val full = new Context {
     before {
       Photo.service = actorOf[InMemoryPhotoService]
-      (1 to 10000).foreach(i => genPhoto.sample.foreach(Photo.set))
+      (1 to 1000).foreach(i => genPhoto.sample.foreach(Photo.set))
     }
     after {
       Photo.stopService
@@ -67,12 +68,15 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       Photo.count must beFull.which(_ must_== 0)
     }
     "insert photos" in {
+      val counter = Agent(0)
       Prop.forAll{p: Photo =>
+        counter(_ + 1)
         Photo.set(p)
         Photo.get(p.id) must beFull.which{_ must_== p}
         true
-      } must pass
-      Photo.count must beFull.which(_ must_== 100)
+      } must pass (display(workers->4, wrkSize->20))
+      Photo.count must beFull.which(_ must_== counter())
+      counter.close
     }
   }
 
@@ -81,14 +85,12 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
       Prop.forAll{p: Photo =>
         Photo.set(p)
         val date = p.createDate.take(3)
-        Photo.timeline(date).exists(_(p.id)) &&
-        Photo.timeline(List(date.head, date.tail.head)).exists(_(p.id)) &&
-        Photo.timeline(List(date.head)).exists(_(p.id))
-      } must pass
+        Photo.timeline(date) must beFull.which(_(p.id))
+        Photo.timeline(List(date.head, date.tail.head)) must beFull.which(_(p.id))
+        Photo.timeline(List(date.head)) must beFull.which(_(p.id))
+        true
+      } must pass (display(workers->4, wrkSize->20))
       Photo.count must_== Photo.timeline().map(_.size)
-      var pIds = Set[String]()
-      (1 to 1000).foreach(i => genPhoto.sample.foreach{p => pIds += p.id; Photo.set(p)})
-      logTime("Get "+pIds.size+" photos")(pIds.map(pId => Photo.get(pId))).foreach(_ must beFull)
     }
   }
 }

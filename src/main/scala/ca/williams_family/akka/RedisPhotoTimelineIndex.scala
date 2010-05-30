@@ -41,7 +41,7 @@ class RedisPhotoTimelineIndex extends PhotoTimelineIndex with RedisHelpers {
     setIndex(k, v)
   }
 
-  def setIndex(k: K, v: V): Unit = index.alter(i => i + (k -> (i.getOrElse(k, new VSet) + v)))
+  def setIndex(k: K, v: V): Unit = index.alter(i => i + ((k, (i.getOrElse(k, new VSet) + v))))
 
   implicit def keyToBytes(k: K): Array[Byte] = k._1+"-"+k._2+"-"+k._3
   

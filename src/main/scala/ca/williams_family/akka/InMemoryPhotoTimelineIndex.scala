@@ -34,7 +34,7 @@ class InMemoryPhotoTimelineIndex extends PhotoTimelineIndex {
 
   def set(k: K, v: V): Unit = {
     keys.put(v, k)
-    index.alter(i => i + (k -> (i.getOrElse(k, new VSet) + v)))
+    index.alter(i => i + ((k, (i.getOrElse(k, new VSet) + v))))
   }
 
 }
