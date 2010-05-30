@@ -11,6 +11,7 @@ import model._
 
 import se.scalablesolutions.akka.actor._
 import Actor._
+import se.scalablesolutions.akka.stm.Transaction.Global._
 import se.scalablesolutions.akka.dispatch._
 import Futures._
 import se.scalablesolutions.akka.config.ScalaConfig._
@@ -33,7 +34,7 @@ abstract class PhotoService extends Transactor with Logger {
   def receive = {
     case CountPhotos => storage forward CountPhotos
     case GetPhotoIds => storage forward GetPhotoIds
-    case msg: SetPhoto =>
+    case msg: SetPhoto => 
       storage ! msg
       timelineIndex ! msg
     case msg: GetPhoto => storage forward msg

@@ -13,23 +13,23 @@ import Arbitrary.arbitrary
 
 object Generators {
 
-  def genRationalPair: Gen[(Int, Int)] = for {
+  def genRatioPair: Gen[(Int, Int)] = for {
     n <- arbitrary[Int] suchThat (_ > java.lang.Integer.MIN_VALUE)
     d <- arbitrary[Int] suchThat (_ > java.lang.Integer.MIN_VALUE)
   } yield (n,d)
 
-  def genTwoEqualRationalPairs: Gen[(Int, Int, Int, Int)] = for {
+  def genTwoEqualRatioPairs: Gen[(Int, Int, Int, Int)] = for {
     n <- Gen.choose(-1000,1000)
     d <- Gen.choose(-1000,1000)
     m <- Gen.choose(1,10000)
   } yield (n,d,n*m,d*m)
 
-  def genRational: Gen[Rational] = for {
-    (n, d) <- genRationalPair
-  } yield Rational(n,d)
+  def genRatio: Gen[Ratio] = for {
+    (n, d) <- genRatioPair
+  } yield Ratio(n,d)
 
-  implicit def arbRational: Arbitrary[Rational] =
-    Arbitrary { genRational }
+  implicit def arbRatio: Arbitrary[Ratio] =
+    Arbitrary { genRatio }
 
   val isoDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
   val idDateFormat = new SimpleDateFormat("yyyyMMdd-HHmmss00")
@@ -53,10 +53,10 @@ object Generators {
   def genPhoto: Gen[Photo] = for {
     id <- genIdHash
     da <- genPhotoDate
-    ex <- arbitrary[Rational]
-    ap <- arbitrary[Rational]
+    ex <- arbitrary[Ratio]
+    ap <- arbitrary[Ratio]
     is <- Gen.choose(100,10000)
-    fo <- arbitrary[Rational]
+    fo <- arbitrary[Ratio]
     he <- Gen.choose(1000,10000)
     wi <- Gen.choose(1000,10000)
   } yield Photo(Photo.mkId(da,id), da, ex, ap, is, fo, he, wi, Map())

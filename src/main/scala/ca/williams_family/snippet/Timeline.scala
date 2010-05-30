@@ -24,7 +24,7 @@ class Timeline {
       tl <- Photo.timeline()
     } yield {
       for {
-        (year, months) <- tl.groupByYMD.map{case (y,m) => (y -> m.keysIterator.toList)}.toSeq.reverse
+        (year, months) <- tl.groupByYMD.map{case (y,m) => (y, m.keysIterator.toList)}.toSeq.reverse
       } yield {
         bind("y", xhtml,
              "year" -> Text(year.toString),

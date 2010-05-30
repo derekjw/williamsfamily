@@ -60,7 +60,7 @@ case class PhotoTimeline(treemap: PhotoTimelineTypes.Col)(implicit val ordering:
     case (cy, ((y,m,d),v)) => {
       val cm = cy.get(y).getOrElse(TreeMap[Int, TreeMap[Int, VSet]]())
       val cd = cm.get(m).getOrElse(TreeMap[Int, VSet]())
-      cy + (y -> (cm + (m -> (cd + (d -> v)))))
+      cy + ((y, (cm + ((m, (cd + ((d, v))))))))
     }
   }
 }

@@ -16,7 +16,7 @@ import org.apache.commons.math.util.MathUtils
 import se.scalablesolutions.akka.actor._
 import se.scalablesolutions.akka.dispatch._
 
-case class Photo(id: String, createDate: List[Int], exposure: Rational, aperature: Rational, iso: Int, focalLength: Rational, width: Int, height: Int, images: Map[String, Image]) {
+case class Photo(id: String, createDate: List[Int], exposure: Ratio, aperature: Ratio, iso: Int, focalLength: Ratio, width: Int, height: Int, images: Map[String, Image]) {
   def uri = "/photos/"+id
   def toJson = {
     ("id", id) ~
@@ -66,12 +66,12 @@ object Photo {
   def timeline(year: Int = 0, month: Int = 0, day: Int = 0): Box[PhotoTimeline] = timeline(List(year,month,day).filterNot(_ == 0))
 
   def serialize(in: Photo) = {
-    implicit val formats = DefaultFormats
+    implicit val formats = DefaultFormats + RatioSerializer
     write(in)
   }
 
   def deserialize(in: String) = {
-    implicit val formats = DefaultFormats
+    implicit val formats = DefaultFormats + RatioSerializer
     read[Photo](in)
   }
 
@@ -99,45 +99,65 @@ case class Image(fileName: String, fileSize: Int, hash: String, width: Int, heig
 }
 
 object R {
-  val common: Map[(Int, Int), Rational] =
-    List(1, 2, 4, 8, 15, 30, 60, 125, 250, 500, 1000).map(d => (1 -> d, Rational(1, d))).toMap
+  val common: Map[(Int, Int), Ratio] =
+    List(1, 2, 4, 8, 15, 30, 60, 125, 250, 500, 1000).map(d => ((1, d), Ratio(1, d))).toMap
 
-  def apply(n: Int = 1, d: Int = 1): Rational = common.get(n -> d).getOrElse(Rational(n,d))
+  def apply(n: Int = 1, d: Int = 1): Ratio = common.get((n, d)).getOrElse(Ratio(n,d))
 
-  def apply(in: String): Rational =
+  def apply(in: String): Ratio =
     in.split("/").toList match {
       case n :: d :: Nil => R(n.toInt,d.toInt)
       case n :: Nil => R(n.toInt)
       case _ => R(0)
     }
 
-  def apply(in: Double): Rational = {
+  def apply(in: Double): Ratio = {
     R((in * 1000).toInt, 1000)
   }
 
   object Implicits {
-    implicit def rationalToJValue(in: Rational): JValue = JArray(List(JInt(in.n), JInt(in.d)))
+    implicit def ratioToJValue(in: Ratio): JValue = JArray(List(JInt(in.n), JInt(in.d)))
   }
 }
 
-object Rational {
-  def apply(n: Int = 1, d: Int = 1): Rational = {
+object Ratio {
+  def apply(n: Int = 1, d: Int = 1): Ratio = {
     val m = if (d < 0) (-1) else 1
     val g = if (n == 1 || d == 1) (1) else (MathUtils.gcd(n, d))
-      if (g == 0) (new Rational(0,0)) else (new Rational(m * n / g, m * d / g))
+      if (g == 0) (new Ratio(0,0)) else (new Ratio(m * n / g, m * d / g))
   }
   def unapply(in: Any): Option[(Int,Int)] = in match {
-    case r: Rational => Some((r.n, r.d))
+    case r: Ratio => Some((r.n, r.d))
+    case _ => None
+  }
+  def unapply(in: String): Option[Ratio] = in.split("""\s*/\s*""").toList.map(asInt) match {
+    case List(Full(n)) => Some(R(n))
+    case List(Full(n),Full(d)) => Some(R(n,d))
     case _ => None
   }
 }
 
-class Rational private (val n: Int, val d: Int) {
+class Ratio private (val n: Int, val d: Int) {
   override def toString = if (d > 1) (n + " / " + d) else (n.toString)
     override def hashCode: Int = 37 * (37 * 17 * n) * d
   override def equals(in: Any): Boolean = in match {
-    case Rational(a,b) if n == a && d == b => true
+    case Ratio(a,b) if n == a && d == b => true
     case _ => false
+  }
+}
+
+object RatioSerializer extends Serializer[Ratio] {
+  private val RatioClass = classOf[Ratio]
+
+  def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Ratio] = {
+    case (TypeInfo(RatioClass, _), json) => json match {
+      case JString(Ratio(r)) => r
+      case x => throw new MappingException("Can't convert "+x+" to Ratio")
+    }
+  }
+
+  def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {
+    case x: Ratio => JString(x.toString)
   }
 }
 
