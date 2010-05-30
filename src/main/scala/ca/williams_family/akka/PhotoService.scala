@@ -33,10 +33,12 @@ abstract class PhotoService extends Transactor with Logger {
 
   def receive = {
     case CountPhotos => storage forward CountPhotos
+    case msg: ForEachPhoto => storage forward msg
     case GetPhotoIds => storage forward GetPhotoIds
     case msg: SetPhoto => 
       storage ! msg
       timelineIndex ! msg
+    case ReIndex(photo) => timelineIndex ! SetPhoto(photo)
     case msg: GetPhoto => storage forward msg
     case msg: GetPhotos => storage forward msg
     case msg: GetPhotoTimeline => timelineIndex forward msg
