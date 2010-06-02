@@ -14,7 +14,7 @@ class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info)
 
   val liftFacebook = "net.liftweb" % "lift-facebook" % "2.0-scala280-SNAPSHOT"
 
-  val akkaRedis = "se.scalablesolutions.akka" %% "akka-persistence-redis"  % "0.9-SNAPSHOT" % "compile"
+  val akkaRedis = "se.scalablesolutions.akka" %% "akka-persistence-redis"  % "0.9" % "compile"
 
   val apacheMath = "org.apache.commons" % "commons-math" % "2.1"
 
