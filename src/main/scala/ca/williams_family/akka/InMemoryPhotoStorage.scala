@@ -19,7 +19,7 @@ class InMemoryPhotoStorage extends PhotoStorage {
 //  self.makeTransactionRequired
   self.lifeCycle = Some(LifeCycle(Permanent))
 
-  val photos = TransactionalState.newMap[K, V]
+  val photos = TransactionalMap[K, V]
 
   def get(k: K): Option[V] = photos.get(k)
 

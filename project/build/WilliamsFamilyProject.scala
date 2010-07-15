@@ -14,7 +14,7 @@ class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info)
 
   val liftFacebook = "net.liftweb" % "lift-facebook" % "2.0-scala280-SNAPSHOT"
 
-  val akkaRedis = "se.scalablesolutions.akka" %% "akka-persistence-redis"  % "0.9" % "compile"
+  val akkaRedis = "se.scalablesolutions.akka" %% "akka-persistence-redis"  % "0.10-SNAPSHOT" % "compile"
 
   val apacheMath = "org.apache.commons" % "commons-math" % "2.1"
 
@@ -33,16 +33,6 @@ class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info)
 
   override def repositories = Set(
     "Fyrie Snapshots" at "http://repo.fyrie.net/snapshots",
-    "Fyrie Akka Deps" at "http://repo.fyrie.net/akka-deps",
-    "Codehaus" at "http://repository.codehaus.org",
-    "Codehaus Snapshots" at "http://snapshots.repository.codehaus.org",
-    "jBoss" at "http://repository.jboss.org/maven2",
-    "Multiverse Releases" at "http://multiverse.googlecode.com/svn/maven-repository/releases/",
-    "GuiceyFruit" at "http://guiceyfruit.googlecode.com/svn/repo/releases/",
-    "DataBinder" at "http://databinder.net/repo",
-    "Configgy" at "http://www.lag.net/repo",
-    "Akka Maven Repository" at "http://scalablesolutions.se/akka/repository",
-    "Java.Net" at "http://download.java.net/maven/2",
     ScalaToolsSnapshots)
 
 }

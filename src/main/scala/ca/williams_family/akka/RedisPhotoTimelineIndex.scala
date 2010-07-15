@@ -20,7 +20,7 @@ class RedisPhotoTimelineIndex extends PhotoTimelineIndex with RedisHelpers {
 
   self.lifeCycle = Some(LifeCycle(Permanent))
 
-  val index = TransactionalState.newRef(new Col)
+  val index = Ref(new Col)
 
   val keys = RedisStorage.newMap("photoTimelineIndex")
 

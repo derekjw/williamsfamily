@@ -18,9 +18,9 @@ class InMemoryPhotoTimelineIndex extends PhotoTimelineIndex {
 
   self.lifeCycle = Some(LifeCycle(Permanent))
 
-  val index = TransactionalState.newRef(new Col)
+  val index = Ref(new Col)
 
-  val keys = TransactionalState.newMap[V, K]
+  val keys = TransactionalMap[V, K]
 
   def get(year: Option[Int], month: Option[Int], day: Option[Int]): PhotoTimeline =
     PhotoTimeline(((year, month, day) match {
