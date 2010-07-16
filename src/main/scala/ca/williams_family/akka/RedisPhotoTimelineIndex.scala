@@ -29,17 +29,19 @@ class RedisPhotoTimelineIndex extends PhotoTimelineIndex with RedisHelpers {
 
   def get(year: Option[Int], month: Option[Int], day: Option[Int]): PhotoTimeline =
     PhotoTimeline(((year, month, day) match {
-      case (Some(y), Some(m), Some(d)) => index.get.map(_.range((y,m,d),(y,m,d+1)))
-      case (Some(y), Some(m), None) => index.get.map(_.range((y,m,1),(y,m+1,1)))
-      case (Some(y), None, None) => index.get.map(_.range((y,1,1),(y+1,1,1)))
-      case (None, None, None) => index.get
+      case (Some(y), Some(m), Some(d)) => atomic { index.get.map(_.range((y,m,d),(y,m,d+1))) }
+      case (Some(y), Some(m), None) => atomic { index.get.map(_.range((y,m,1),(y,m+1,1))) }
+      case (Some(y), None, None) => atomic { index.get.map(_.range((y,1,1),(y+1,1,1))) }
+      case (None, None, None) => atomic { index.get }
       case _ => None
     }).getOrElse(new Col))
 
 
   def set(k: K, v: V): Unit = {
-    keys.put(v, k)
-    setIndex(k, v)
+    atomic {
+      keys.put(v, k)
+      setIndex(k, v)
+    }
   }
 
   def setIndex(k: K, v: V): Unit = index.alter(i => i + ((k, (i.getOrElse(k, new VSet) + v))))
