@@ -6,8 +6,8 @@ import net.liftweb.common._
 import model._
 
 import se.scalablesolutions.akka.actor._
-import se.scalablesolutions.akka.stm._
-import Transaction.Global._
+import se.scalablesolutions.akka.stm.transactional._
+import se.scalablesolutions.akka.stm.local._
 import se.scalablesolutions.akka.persistence.redis.RedisStorage
 import se.scalablesolutions.akka.config.ScalaConfig._
 
@@ -19,7 +19,7 @@ trait RedisPhotoStorageFactory {
 class RedisPhotoStorage extends PhotoStorage with RedisHelpers {
   self.lifeCycle = Some(LifeCycle(Permanent))
 
-  private var photos = RedisStorage.getMap("photos")
+  var photos = RedisStorage.getMap("photos")
 
   def get(k: K): Option[V] = atomic { photos.get(k).map(asString) }
 

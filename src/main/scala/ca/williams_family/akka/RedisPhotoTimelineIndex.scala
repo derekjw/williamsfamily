@@ -4,7 +4,8 @@ package akka
 import model._
 
 import se.scalablesolutions.akka.actor._
-import se.scalablesolutions.akka.stm._
+import se.scalablesolutions.akka.stm.local._
+import se.scalablesolutions.akka.stm.transactional._
 import se.scalablesolutions.akka.config.ScalaConfig._
 import se.scalablesolutions.akka.persistence.redis.RedisStorage
 
@@ -24,7 +25,7 @@ class RedisPhotoTimelineIndex extends PhotoTimelineIndex with RedisHelpers {
 
   val keys = RedisStorage.newMap("photoTimelineIndex")
 
-  Transaction.Global.atomic { for ((v,k) <- keys) setIndex(k,v) }
+  atomic { for ((v,k) <- keys) setIndex(k,v) }
 
   def get(year: Option[Int], month: Option[Int], day: Option[Int]): PhotoTimeline =
     PhotoTimeline(((year, month, day) match {
