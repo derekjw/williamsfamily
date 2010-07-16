@@ -11,7 +11,7 @@ import model._
 
 import se.scalablesolutions.akka.actor._
 import Actor._
-import se.scalablesolutions.akka.stm.Transaction.Global._
+import se.scalablesolutions.akka.stm.global._
 import se.scalablesolutions.akka.dispatch._
 import Futures._
 import se.scalablesolutions.akka.config.ScalaConfig._
@@ -23,7 +23,7 @@ class RedisPhotoService extends PhotoService
 with RedisPhotoStorageFactory
 with RedisPhotoTimelineIndexFactory
 
-abstract class PhotoService extends Transactor with Logger {
+abstract class PhotoService extends Actor with Logger {
   self.faultHandler = Some(AllForOneStrategy(5, 5000))
   self.trapExit = List(classOf[Exception])
 
@@ -35,7 +35,7 @@ abstract class PhotoService extends Transactor with Logger {
     case CountPhotos => storage forward CountPhotos
     case msg: ForEachPhoto => storage forward msg
     case GetPhotoIds => storage forward GetPhotoIds
-    case msg: SetPhoto => 
+    case msg: SetPhoto =>
       storage ! msg
       timelineIndex ! msg
     case ReIndex(photo) => timelineIndex ! SetPhoto(photo)

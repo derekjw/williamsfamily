@@ -6,8 +6,8 @@ import net.liftweb.common._
 import model._
 
 import se.scalablesolutions.akka.actor._
-import se.scalablesolutions.akka.stm._
-import Transaction.{Global, Local}
+import se.scalablesolutions.akka.stm.transactional._
+import se.scalablesolutions.akka.stm.local._
 import se.scalablesolutions.akka.config.ScalaConfig._
 
 trait InMemoryPhotoStorageFactory {
@@ -21,15 +21,15 @@ class InMemoryPhotoStorage extends PhotoStorage {
 
   val photos = TransactionalMap[K, V]
 
-  def get(k: K): Option[V] = photos.get(k)
+  def get(k: K): Option[V] = atomic { photos.get(k) }
 
-  def put(k: K, v: V): Unit = photos.put(k, v)
+  def put(k: K, v: V): Unit = atomic { photos.put(k, v) }
 
-  def size: Int = photos.size
+  def size: Int = atomic { photos.size }
 
-  def keys: Iterable[K] = photos.keysIterator.toList
+  def keys: Iterable[K] = atomic { photos.keysIterator.toList }
 
-  def foreach(f: (V) => Unit) = photos.valuesIterator.foreach(f)
+  def foreach(f: (V) => Unit) = atomic { photos.valuesIterator.foreach(f) }
 
 }
 

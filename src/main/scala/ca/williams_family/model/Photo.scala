@@ -33,7 +33,7 @@ object Photo {
   def service = _service
 
   def service_=(ps: ActorRef): Unit = {
-    _service = Full(ps.start)
+    _service = Box !! ps.start orElse noService
 //    reIndex
   }
 

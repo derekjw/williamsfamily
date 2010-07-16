@@ -16,7 +16,6 @@ import scala.collection.SortedSet
 import se.scalablesolutions.akka.actor.{Actor,ActorRegistry,Agent}
 import Actor._
 import se.scalablesolutions.akka.dispatch.Futures._
-import se.scalablesolutions.akka.stm.Transaction.Global._
 
 import net.liftweb.common._
 import net.liftweb.util.IoHelpers._

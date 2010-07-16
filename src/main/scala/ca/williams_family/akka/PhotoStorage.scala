@@ -7,7 +7,7 @@ import model._
 
 import se.scalablesolutions.akka.actor._
 
-trait PhotoStorage extends Transactor {
+trait PhotoStorage extends Actor {
   type V = String
   type K = String
 

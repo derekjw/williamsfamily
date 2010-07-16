@@ -7,12 +7,12 @@ class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info)
 
   override def ivyXML=
     <dependencies>
-      <dependency org="net.liftweb" name="lift-webkit" rev="2.0-scala280-SNAPSHOT"><exclude module="log4j"/><exclude module="slf4j-log4j12"/></dependency>
-      <dependency org="net.liftweb" name="lift-util" rev="2.0-scala280-SNAPSHOT"><exclude module="log4j"/><exclude module="slf4j-log4j12"/></dependency>
-      <dependency org="net.liftweb" name="lift-json" rev="2.0-scala280-SNAPSHOT"><exclude module="log4j"/><exclude module="slf4j-log4j12"/></dependency>
+      <dependency org="net.liftweb" name="lift-webkit_2.8.0" rev="2.1-SNAPSHOT"><exclude module="log4j"/><exclude module="slf4j-log4j12"/></dependency>
+      <dependency org="net.liftweb" name="lift-util_2.8.0" rev="2.1-SNAPSHOT"><exclude module="log4j"/><exclude module="slf4j-log4j12"/></dependency>
+      <dependency org="net.liftweb" name="lift-json_2.8.0" rev="2.1-SNAPSHOT"><exclude module="log4j"/><exclude module="slf4j-log4j12"/></dependency>
     </dependencies>
 
-  val liftFacebook = "net.liftweb" % "lift-facebook" % "2.0-scala280-SNAPSHOT"
+  val liftFacebook = "net.liftweb" %% "lift-facebook" % "2.1-SNAPSHOT"
 
   val akkaRedis = "se.scalablesolutions.akka" %% "akka-persistence-redis"  % "0.10-SNAPSHOT" % "compile"
 
@@ -31,9 +31,18 @@ class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info)
 
   override def jettyPort = 8090
 
-  override def repositories = Set(
-    "Fyrie Snapshots" at "http://repo.fyrie.net/snapshots",
-    ScalaToolsSnapshots)
+  val akkaEmbedded            = "Akka embedded repo" at "http://repo.fyrie.net/akka-embedded-repo"
+  val fyrieSnapshots          = "Fyrie Snapshots" at "http://repo.fyrie.net/snapshots"
+  val scalaToolsSnapshots     = ScalaToolsSnapshots
 
+  def guiceyFruitRepo         = "GuiceyFruit Repo" at "http://guiceyfruit.googlecode.com/svn/repo/releases/"
+  val guiceyFruitModuleConfig = ModuleConfiguration("org.guiceyfruit", guiceyFruitRepo)
+  def jbossRepo               = "JBoss Repo" at "https://repository.jboss.org/nexus/content/groups/public/"
+  val jbossModuleConfig       = ModuleConfiguration("org.jboss", jbossRepo)
+  val nettyModuleConfig       = ModuleConfiguration("org.jboss.netty", jbossRepo)
+  val jgroupsModuleConfig     = ModuleConfiguration("jgroups", jbossRepo)
+  val liftModuleConfig        = ModuleConfiguration("net.liftweb", ScalaToolsSnapshots)
+  def codehausSnapshotRepo    = "Codehaus Snapshots" at "http://snapshots.repository.codehaus.org"
+  val multiverseModuleConfig  = ModuleConfiguration("org.multiverse", codehausSnapshotRepo)
 }
 
