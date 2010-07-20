@@ -2,6 +2,8 @@ package ca.williams_family
 package model
 package specs
 
+import net.fyrie.ratio._
+
 import org.scalacheck._
 
 import java.util.Date
@@ -12,24 +14,6 @@ import Gen._
 import Arbitrary.arbitrary
 
 object Generators {
-
-  def genRatioPair: Gen[(Int, Int)] = for {
-    n <- arbitrary[Int] suchThat (_ > java.lang.Integer.MIN_VALUE)
-    d <- arbitrary[Int] suchThat (_ > java.lang.Integer.MIN_VALUE)
-  } yield (n,d)
-
-  def genTwoEqualRatioPairs: Gen[(Int, Int, Int, Int)] = for {
-    n <- Gen.choose(-1000,1000)
-    d <- Gen.choose(-1000,1000)
-    m <- Gen.choose(1,10000)
-  } yield (n,d,n*m,d*m)
-
-  def genRatio: Gen[Ratio] = for {
-    (n, d) <- genRatioPair
-  } yield Ratio(n,d)
-
-  implicit def arbRatio: Arbitrary[Ratio] =
-    Arbitrary { genRatio }
 
   val isoDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
   val idDateFormat = new SimpleDateFormat("yyyyMMdd-HHmmss00")
@@ -53,13 +37,13 @@ object Generators {
   def genPhoto: Gen[Photo] = for {
     id <- genIdHash
     da <- genPhotoDate
-    ex <- arbitrary[Ratio]
-    ap <- arbitrary[Ratio]
+    //ex <- arbitrary[Ratio]
+    //ap <- arbitrary[Ratio]
     is <- Gen.choose(100,10000)
-    fo <- arbitrary[Ratio]
+    //fo <- arbitrary[Ratio]
     he <- Gen.choose(1000,10000)
     wi <- Gen.choose(1000,10000)
-  } yield Photo(Photo.mkId(da,id), da, ex, ap, is, fo, he, wi, Map())
+  } yield Photo(Photo.mkId(da,id), da, Ratio(1,3), Ratio(1,3), is, Ratio(1,3), he, wi, Map())
 
   implicit def arbPhoto: Arbitrary[Photo] = {
     Arbitrary { genPhoto }

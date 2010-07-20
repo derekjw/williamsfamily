@@ -3,6 +3,8 @@ package model
 
 import akka._
 
+import net.fyrie.ratio._
+
 import net.liftweb.common._
 import Box._
 import net.liftweb.util.Helpers._
@@ -11,7 +13,6 @@ import JsonAST._
 import JsonDSL._
 import JsonParser._
 import Serialization.{read, write}
-import org.apache.commons.math.util.MathUtils
 
 import se.scalablesolutions.akka.actor._
 import se.scalablesolutions.akka.dispatch._
@@ -111,60 +112,15 @@ case class Image(fileName: String, fileSize: Int, hash: String, width: Int, heig
   }
 }
 
-object R {
-  val common: Map[(Int, Int), Ratio] =
-    List(1, 2, 4, 8, 15, 30, 60, 125, 250, 500, 1000).map(d => ((1, d), Ratio(1, d))).toMap
-
-  def apply(n: Int = 1, d: Int = 1): Ratio = common.get((n, d)).getOrElse(Ratio(n,d))
-
-  def apply(in: String): Ratio =
-    in.split("/").toList match {
-      case n :: d :: Nil => R(n.toInt,d.toInt)
-      case n :: Nil => R(n.toInt)
-      case _ => R(0)
-    }
-
-  def apply(in: Double): Ratio = {
-    R((in * 1000).toInt, 1000)
-  }
-
-  object Implicits {
-    implicit def ratioToJValue(in: Ratio): JValue = JArray(List(JInt(in.n), JInt(in.d)))
-  }
-}
-
-object Ratio {
-  def apply(n: Int = 1, d: Int = 1): Ratio = {
-    val m = if (d < 0) (-1) else 1
-    val g = if (n == 1 || d == 1) (1) else (MathUtils.gcd(n, d))
-      if (g == 0) (new Ratio(0,0)) else (new Ratio(m * n / g, m * d / g))
-  }
-  def unapply(in: Any): Option[(Int,Int)] = in match {
-    case r: Ratio => Some((r.n, r.d))
-    case _ => None
-  }
-  def unapply(in: String): Option[Ratio] = in.split("""\s*/\s*""").toList.map(asInt) match {
-    case List(Full(n)) => Some(R(n))
-    case List(Full(n),Full(d)) => Some(R(n,d))
-    case _ => None
-  }
-}
-
-class Ratio private (val n: Int, val d: Int) {
-  override def toString = if (d > 1) (n + " / " + d) else (n.toString)
-    override def hashCode: Int = 37 * (37 * 17 * n) * d
-  override def equals(in: Any): Boolean = in match {
-    case Ratio(a,b) if n == a && d == b => true
-    case _ => false
-  }
-}
-
 object RatioSerializer extends Serializer[Ratio] {
   private val RatioClass = classOf[Ratio]
+  private val RatioRegex = """^\s*(\d+)\s*/\s*(\d+)\s*$""".r
+  private val IntRegex = """^\s*(\d+)\s*$""".r
 
   def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Ratio] = {
     case (TypeInfo(RatioClass, _), json) => json match {
-      case JString(Ratio(r)) => r
+      case JString(RatioRegex(n,d)) => Ratio(BigInt(n), BigInt(d))
+      case JString(IntRegex(n)) => Ratio(BigInt(n))
       case x => throw new MappingException("Can't convert "+x+" to Ratio")
     }
   }
