@@ -4,6 +4,9 @@ package akka
 import net.liftweb.common._
 import Box._
 import model._
+import serialize._
+
+import net.liftweb.json.Serialization._
 
 import se.scalablesolutions.akka.actor._
 
@@ -19,13 +22,11 @@ trait PhotoStorage extends Actor {
       self.reply(keys)
 
     case SetPhoto(photo) =>
-      setPhoto(photo, Photo.serialize(photo))
+      setPhoto(photo, serializePhoto(photo))
 
     case GetPhoto(id) =>
-      self.reply(getPhoto(id).map(Photo.deserialize))
+      self.reply(getPhoto(id).map(deserializePhoto))
 
-    case ForEachPhoto(f) =>
-      foreach(v => f(Photo.deserialize(v)))
   }
 
   def get(k: K): Option[V]

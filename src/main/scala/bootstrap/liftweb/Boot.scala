@@ -67,7 +67,7 @@ class Boot extends Logger {
     //val dir = new java.io.File("output")
     //val filter = new java.io.FileFilter() { def accept(file: java.io.File): Boolean = { file.getName.endsWith(".json") } }
     //logTime("Loading production photos")(dir.listFiles(filter).toList.map{f =>
-      //Photo.set(Photo.deserialize(new String(readWholeFile(f), "UTF-8")))
+      //Photo.set(serialize.deserializePhoto(new String(readWholeFile(f), "UTF-8")))
     //})
 
     statefulRewrite.prepend {

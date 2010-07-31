@@ -31,7 +31,7 @@ trait PhotoTimelineIndex extends PhotoIndex {
   }
 
   object DateAndId {
-    def unapply(photo: Photo): Option[((Int, Int, Int), String)] = photo.createDate match {
+    def unapply(photo: Photo): Option[((Int, Int, Int), String)] = photo.createDate.toList match {
       case y :: m :: d :: _ => Some(((y,m,d),photo.id))
       case _ => None
     }

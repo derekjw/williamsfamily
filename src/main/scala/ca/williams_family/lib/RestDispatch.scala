@@ -2,6 +2,7 @@ package ca.williams_family
 package lib
 
 import model._
+import serialize._
 
 import net.liftweb._
 import http._
