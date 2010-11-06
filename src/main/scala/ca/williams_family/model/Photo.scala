@@ -43,7 +43,7 @@ object Photo extends RedisMeta[Photo] {
                            cmd.zadd(indexKey(Some("days")), year * 10000 + month * 100 + day, "%04d-%02d-%02d" format (year, month, day))))
   }
 
-  def timelineMonths(implicit r: RedisClient): Stream[(Int, Int)] = r send cmd.zrange[String](indexKey(Some("months")), 0, -1) getOrElse Stream.empty map (s => (s.take(4).toInt, s.slice(5,2).toInt))
+  def timelineMonths(implicit r: RedisClient): Stream[(Int, Int)] = r send cmd.zrange[String](indexKey(Some("months")), 0, -1) getOrElse Stream.empty map (s => (s.take(4).toInt, s.drop(5).take(2).toInt))
 }
 
 
@@ -59,7 +59,7 @@ trait URI[A] {
 
 object URI {
   implicit object PhotoURI extends URI[Photo] {
-    def apply(in: Photo) = "/photo/"+in.id
+    def apply(in: Photo) = "/photos/"+in.id
   }
 
   implicit object ImageURI extends URI[Image] {

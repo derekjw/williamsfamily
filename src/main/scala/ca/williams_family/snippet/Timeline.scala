@@ -20,14 +20,14 @@ object Timeline {
 
 class Timeline {
   def list(xhtml: NodeSeq): NodeSeq =
-    Photo.timelineMonths.groupBy(_._1).toSeq.sortBy(_._1).flatMap{ case (year, months) =>
+    Photo.timelineMonths.groupBy(_._1).toSeq.sortBy(_._1).reverse.flatMap{ case (year, months) =>
       bind("y", xhtml,
            "year" -> Text(year.toString),
            AttrBindParam("href", Text("/timeline/"+year), "href"),
            "months" -> months.flatMap(month =>
              bind("m", chooseTemplate("y", "months", xhtml),
                   "month" -> Text(Timeline.monthNames(month._2)),
-                  AttrBindParam("href", Text("/timeline/"+year+"/"+month), "href")))) }
+                  AttrBindParam("href", Text("/timeline/"+year+"/"+month._2), "href")))) }
   
   def photos(xhtml: NodeSeq): NodeSeq =
     for {

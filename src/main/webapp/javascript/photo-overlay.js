@@ -6,7 +6,7 @@ $(
       $('body').append("<div id=\"overlay\"><div id=\"overlay-background\"></div></div>")
       $.getJSON(this.href,function(data,textStatus){
         image = data.images.preview
-        $._img({'class': 'preview', 'src': image.uri})
+        $._img({'class': 'preview', 'src': 'http://photos.williams-family.ca/photos/' + image.fileName})
         .appendTo('#overlay')
         .data('width', image.width)
         .data('height', image.height)

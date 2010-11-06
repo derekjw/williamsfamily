@@ -21,10 +21,6 @@ package object model {
     case x: Photo => Serialization.write(x)
   }
 
-//  implicit val photoMeta = Photo
-
-//  def meta[A](implicit m: RedisMeta[A]) = m
-
   def uri[A](in: A)(implicit u: URI[A]) = u(in)
 
   def dateToLong(in: LocalDateTime): Long = in.toDateTime(DateTimeZone.UTC).getMillis

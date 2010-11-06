@@ -9,6 +9,7 @@ import js.jquery._
 import net.liftweb.sitemap._
 import net.liftweb.sitemap.Loc._
 import Helpers._
+import net.liftweb.json.Serialization
 
 import ca.williams_family._
 import model._
@@ -32,16 +33,7 @@ class Boot extends Logger {
       case _ => Full(DocType.html5)
     }
 
-    //this is really important for fb connect
-    //useXhtmlMimeType = false 
-
-    //Props.get("fbapikey").foreach(FacebookRestApi.apiKey = _)
-    //Props.get("fbsecret").foreach(FacebookRestApi.secret = _)
-
     jsArtifacts = JQuery14Artifacts
-
-    //ajaxStart = Full(() => jsArtifacts.show("ajax-loader").cmd)
-    //ajaxEnd = Full(() => jsArtifacts.hide("ajax-loader").cmd)
 
     statelessDispatchTable.append(RestServices)
     AjaxDispatch.init()
@@ -55,7 +47,7 @@ class Boot extends Logger {
     /*val dir = new java.io.File("output")
     val filter = new java.io.FileFilter() { def accept(file: java.io.File): Boolean = { file.getName.endsWith(".json") } }
     logTime("Loading production photos")(dir.listFiles(filter).toList.map{f =>
-      Photo.set(serialize.deserializePhoto(new String(readWholeFile(f), "UTF-8")))
+      Photo.save(Serialization.read[Photo](new String(readWholeFile(f), "UTF-8")))
     })*/
 
     statefulRewrite.prepend {
