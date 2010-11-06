@@ -6,28 +6,17 @@ import net.fyrie.ratio._
 
 import org.scalacheck._
 
-import java.util.Date
-import java.util.{Calendar => C}
-import java.text.SimpleDateFormat
+import org.joda.time.{DateTime, LocalDateTime, DateTimeZone}
 
 import Gen._
 import Arbitrary.arbitrary
 
 object Generators {
 
-  val isoDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
-  val idDateFormat = new SimpleDateFormat("yyyyMMdd-HHmmss00")
-
-  def genPhotoDate: Gen[ExifDate] = {
-    val cal = C.getInstance
-    cal.set(2000,1,1)
-    val calstart = cal.getTimeInMillis
-    cal.set(2010,1,1)
-    val calend = cal.getTimeInMillis
-    Gen.choose(calstart,calend).flatMap{i =>
-      cal.setTimeInMillis(i)
-      Gen(_ => ExifDate(cal.get(C.YEAR) :: (cal.get(C.MONTH) + 1) :: cal.get(C.DATE) :: cal.get(C.HOUR_OF_DAY) :: cal.get(C.MINUTE) :: cal.get(C.SECOND) :: (cal.get(C.MILLISECOND) / 10) :: Nil))
-    }
+  def genLocalDateTime: Gen[LocalDateTime] = {
+    val start = (new DateTime(2000, 1, 1, 0, 0, 0, 0, DateTimeZone.UTC)).getMillis
+    val end = (new DateTime(2010, 1, 1, 0, 0, 0, 0, DateTimeZone.UTC)).getMillis
+    Gen.choose(start,end).map{i => new LocalDateTime(i, DateTimeZone.UTC)}
   }
 
   def genIdHash: Gen[String] = {
@@ -36,14 +25,14 @@ object Generators {
 
   def genPhoto: Gen[Photo] = for {
     id <- genIdHash
-    da <- genPhotoDate
+    da <- genLocalDateTime
     //ex <- arbitrary[Ratio]
     //ap <- arbitrary[Ratio]
-    is <- Gen.choose(100,10000)
+    is <- Gen.choose(0,7).map(x => (math.pow(2, x).toInt) * 100)
     //fo <- arbitrary[Ratio]
     he <- Gen.choose(1000,10000)
     wi <- Gen.choose(1000,10000)
-  } yield Photo(Photo.mkId(da,id), da, Ratio(1,3), Ratio(1,3), is, Ratio(1,3), he, wi, Map())
+  } yield Photo(Photo.mkId(da,id), da, Some(Ratio(1,3)), Some(Ratio(1,3)), Some(is), Some(Ratio(1,3)), he, wi, Map())
 
   implicit def arbPhoto: Arbitrary[Photo] = {
     Arbitrary { genPhoto }

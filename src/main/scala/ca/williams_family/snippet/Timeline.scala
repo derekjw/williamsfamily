@@ -20,37 +20,28 @@ object Timeline {
 
 class Timeline {
   def list(xhtml: NodeSeq): NodeSeq =
-    for {
-      tl <- Photo.timeline()
-    } yield {
-      for {
-        (year, months) <- tl.groupByYMD.map{case (y,m) => (y, m.keysIterator.toList)}.toSeq.reverse
-      } yield {
-        bind("y", xhtml,
-             "year" -> Text(year.toString),
-             AttrBindParam("href", Text("/timeline/"+year), "href"),
-             "months" -> months.flatMap(month =>
-               bind("m", chooseTemplate("y", "months", xhtml),
-                    "month" -> Text(Timeline.monthNames(month)),
-                    AttrBindParam("href", Text("/timeline/"+year+"/"+month), "href"))))
-      }
-    }.flatten
+    Photo.timelineMonths.groupBy(_._1).toSeq.sortBy(_._1).flatMap{ case (year, months) =>
+      bind("y", xhtml,
+           "year" -> Text(year.toString),
+           AttrBindParam("href", Text("/timeline/"+year), "href"),
+           "months" -> months.flatMap(month =>
+             bind("m", chooseTemplate("y", "months", xhtml),
+                  "month" -> Text(Timeline.monthNames(month._2)),
+                  AttrBindParam("href", Text("/timeline/"+year+"/"+month), "href")))) }
   
   def photos(xhtml: NodeSeq): NodeSeq =
     for {
       year <- S.param("year").flatMap(asInt)
       month <- S.param("month").flatMap(asInt)
-      tl <- Photo.timeline(year,month)
     } yield {
       for {
-        pId <- tl.toSeq
-        photo <- Photo.get(pId)
+        photo <- Photo.findAllByMonth(year,month)
         thumb <- photo.images.get("thumbnail")
       } yield {
         bind("t", xhtml,
              AttrBindParam("id", Text(photo.id), "id"),
-             AttrBindParam("href", Text(photo.uri), "href"),
-             AttrBindParam("src", Text(thumb.uri), "src"))
+             AttrBindParam("href", Text(uri(photo)), "href"),
+             AttrBindParam("src", Text(uri(thumb)), "src"))
       }
     }.flatten
 

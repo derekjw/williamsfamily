@@ -10,16 +10,9 @@ import net.liftweb.sitemap._
 import net.liftweb.sitemap.Loc._
 import Helpers._
 
-import se.scalablesolutions.akka.actor.Actor._
-import se.scalablesolutions.akka.dispatch.Futures._
-import se.scalablesolutions.akka.config.ScalaConfig._
-
-import net.liftweb.ext_api.facebook.{FacebookRestApi}
-
 import ca.williams_family._
 import model._
 import lib._
-import akka._
 
 /**
  * A class that's instantiated early and run.  It allows the application
@@ -40,10 +33,10 @@ class Boot extends Logger {
     }
 
     //this is really important for fb connect
-    useXhtmlMimeType = false 
+    //useXhtmlMimeType = false 
 
-    Props.get("fbapikey").foreach(FacebookRestApi.apiKey = _)
-    Props.get("fbsecret").foreach(FacebookRestApi.secret = _)
+    //Props.get("fbapikey").foreach(FacebookRestApi.apiKey = _)
+    //Props.get("fbsecret").foreach(FacebookRestApi.secret = _)
 
     jsArtifacts = JQuery14Artifacts
 
@@ -53,22 +46,17 @@ class Boot extends Logger {
     statelessDispatchTable.append(RestServices)
     AjaxDispatch.init()
 
-    loggedInTest = Full(() => User.loggedIn_?)
+//    loggedInTest = Full(() => User.loggedIn_?)
 
     // where to search snippet
     addToPackages("ca.williams_family")
 
-    User.service = actorOf[RedisUserService]
-
-    Photo.service = logTime("Initializing photo service")(actorOf[RedisPhotoService])
-
     info("Photo count: "+Photo.count)
-    info("Photos indexed: "+Photo.timeline().map(_.size))
-    //val dir = new java.io.File("output")
-    //val filter = new java.io.FileFilter() { def accept(file: java.io.File): Boolean = { file.getName.endsWith(".json") } }
-    //logTime("Loading production photos")(dir.listFiles(filter).toList.map{f =>
-      //Photo.set(serialize.deserializePhoto(new String(readWholeFile(f), "UTF-8")))
-    //})
+    /*val dir = new java.io.File("output")
+    val filter = new java.io.FileFilter() { def accept(file: java.io.File): Boolean = { file.getName.endsWith(".json") } }
+    logTime("Loading production photos")(dir.listFiles(filter).toList.map{f =>
+      Photo.set(serialize.deserializePhoto(new String(readWholeFile(f), "UTF-8")))
+    })*/
 
     statefulRewrite.prepend {
       case
@@ -97,8 +85,8 @@ class Boot extends Logger {
     setSiteMap(entries)
 
     unloadHooks.append { () =>
-      Photo.stopService
-      User.stopService
+      GlobalRedisClient.stop
+      GlobalRedisClient.shutdownWorkarounds
     }
   }
 

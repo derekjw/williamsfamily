@@ -1,174 +1,68 @@
 package ca.williams_family
 package model
 
-import akka._
+import net.fyrie.ratio.Ratio
+import net.fyrie.redis.RedisClient
+import net.fyrie.redis.{Commands => cmd}
 
-import net.fyrie.ratio._
+import org.joda.time.{LocalDateTime}
 
-import net.liftweb.common._
-import Box._
-import net.liftweb.util.Helpers._
-import net.liftweb.json._
-import JsonAST._
-import JsonDSL._
-import JsonParser._
-import Serialization.{read, write}
+case class Photo(id: String,
+                 createDate: LocalDateTime,
+                 exposure: Option[Ratio],
+                 aperature: Option[Ratio],
+                 iso: Option[Ratio],
+                 focalLength: Option[Ratio],
+                 width: Int,
+                 height: Int,
+                 images: Map[String,Image])
 
-import se.scalablesolutions.akka.actor._
-import se.scalablesolutions.akka.dispatch._
+object Photo extends RedisMeta[Photo] {
+  def id(in: Photo) = in.id
 
-case class Photo(id: String, createDate: ExifDate, exposure: Ratio, aperature: Ratio, iso: Int, focalLength: Ratio, width: Int, height: Int, images: Map[String, Image]) {
-  def uri = "/photos/"+id
+  def score(in: Photo): Double = dateToLong(in.createDate)
 
-  def toJson = {
-    ("id", id) ~
-    ("uri", uri) ~
-    ("createdate", createDate.toString) ~
-    ("images", JObject(images.map{case (k,v) => JField(k, v.toJson)}.toList))
+  def mkId(date: LocalDateTime, hash: String): String =
+    date.toString("yyyyMMdd'-'HHmmssSSS").take(17) + "-" + hash
+
+  override def indexes(in: Photo): List[String] = List(in.iso.map(x => "iso" + separator + x.toString)).flatten
+
+  def findAllByMonth(year: Int, month: Int)(implicit r: RedisClient): Stream[Photo] = {
+    val startDate = new LocalDateTime(year, month, 1, 0, 0)
+    val endDate = startDate.plusMonths(1)
+    r send cmd.zrangebyscore[String](indexKey(), min = dateToLong(startDate), max = dateToLong(endDate)) flatMap (ids =>
+      r send cmd.mget[Photo](ids.map(key)) map (_.flatten)) getOrElse Stream.empty
   }
+
+  override def afterSave(in: Photo)(implicit r: RedisClient) {
+    val year = in.createDate.getYear
+    val month = in.createDate.getMonthOfYear
+    val day = in.createDate.getDayOfMonth
+    r ! cmd.multiexec(List(cmd.zadd(indexKey(Some("years")), year, year),
+                           cmd.zadd(indexKey(Some("months")), year * 100 + month, "%04d-%02d" format (year,month)),
+                           cmd.zadd(indexKey(Some("days")), year * 10000 + month * 100 + day, "%04d-%02d-%02d" format (year, month, day))))
+  }
+
+  def timelineMonths(implicit r: RedisClient): Stream[(Int, Int)] = r send cmd.zrange[String](indexKey(Some("months")), 0, -1) getOrElse Stream.empty map (s => (s.take(4).toInt, s.slice(5,2).toInt))
 }
 
-object Photo {
-  private val noService = Failure("Photo service not set")
-  private var _service: Box[ActorRef] = noService
 
-  def service = _service
+case class Image(fileName: String,
+                 fileSize: Int,
+                 hash: String,
+                 width: Int,
+                 height: Int)
 
-  def service_=(ps: ActorRef): Unit = {
-    _service = Box !! ps.start orElse noService
-//    reIndex
-  }
-
-  def stopService: Unit = {
-    _service.foreach(_.stop)
-    _service = noService
-  }
-
-
-  def reIndex: Unit =
-    logTime("ReIndexing photos"){
-      for {
-        s <- service
-        id <- ((s !! GetPhotoIds) ?~ "Timed out").asA[List[String]].getOrElse(Nil)
-        photo <- get(id)
-      } { s ! ReIndex(photo) }
-    }
-
-  def count =
-    for {
-      s <- service
-      res <- ((s !! CountPhotos) ?~ "Timed out").asA[java.lang.Integer].map(_.intValue)
-    } yield res
-
-  def set(photo: Photo): Unit =
-    for {
-      s <- service
-    } s ! SetPhoto(photo)
-
-  def get(id: String) =
-    for {
-      s <- service
-      res <- ((s !! GetPhoto(id)) ?~ "Timed out" ~> 500).asA[Option[Photo]] ?~ "Invalid Response"
-      photo <-res ?~ "Photo Not Found" ~> 404
-    } yield photo
-
-  def timeline(key: List[Int]): Box[PhotoTimeline] =
-    for {
-      s <- service
-      res <- ((s !! GetPhotoTimeline(key)) ?~ "Timed out").asA[PhotoTimeline] ?~ "Invalid Response"
-    } yield res
-
-  def timeline(year: Int = 0, month: Int = 0, day: Int = 0): Box[PhotoTimeline] = timeline(List(year,month,day).filterNot(_ == 0))
-
-  def mkId(date: ExifDate, hash: String) =
-    (date format "%04d%02d%02d-%02d%02d%02d%02d") + "-" + hash
-
+trait URI[A] {
+  def apply(in: A): String
 }
 
-case class ExifDate(year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int, subsec: Int) {
-  def toList: List[Int] = List(year, month, day, hour, minute, second, subsec)
-  override def toString = format("%04d-%02d-%02dT%02d:%02d:%02d.%02d")
-  def format(in: String): String = in format (year, month, day, hour, minute, second, subsec)
-}
-
-object ExifDate {
-  def apply(in: Any): Option[ExifDate] = ExifDateParse(in)
-}
-
-object ExifDateParse {
-  val ExifDateRegex = """^(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})\.(\d{2})$""".r
-
-  def apply(in: Any): Option[ExifDate] = Some(in) collect {
-    case (year: Int) :: (month: Int) :: (day: Int) :: (hour: Int) ::
-         (minute: Int) :: (second: Int) :: (subsec: Int) :: _ =>
-      ExifDate(year, month, day, hour, minute, second, subsec)
-    case ExifDateRegex(year, month, day, hour, minute, second, subsec) =>
-      ExifDate(year.toInt, month.toInt, day.toInt, hour.toInt, minute.toInt, second.toInt, subsec.toInt)
+object URI {
+  implicit object PhotoURI extends URI[Photo] {
+    def apply(in: Photo) = "/photo/"+in.id
   }
 
-  def unapply(in: Any): Option[ExifDate] = apply(in)
-}
-
-case class Image(fileName: String, fileSize: Int, hash: String, width: Int, height: Int) {
-  def uri = "http://photos.williams-family.ca/photos/"+fileName
-
-  def toJson: JValue = (
-    ("filename" -> fileName) ~
-    ("filesize" -> fileSize) ~
-    ("uri" -> uri) ~
-    ("hash" -> hash) ~
-    ("width" -> width) ~
-    ("height" -> height)
-  )
-}
-
-package object serialize {
-  implicit val formats = DefaultFormats + RatioSerializer + ExifDateSerializer
-
-  implicit def obj2JValue[T](in: T)(implicit s: Serializer[T]): JValue = compact(JsonAST.render(Some(in) collect s.serialize))
-
-  def serializePhoto(in: Photo) = {
-    write(in)
-  }
-
-  def deserializePhoto(in: String) = {
-    read[Photo](in)
-  }
-
-  implicit object ExifDateSerializer extends Serializer[ExifDate] {
-    private val ExifDateClass = classOf[ExifDate]
-
-    def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), ExifDate] = {
-      case (TypeInfo(ExifDateClass, _), json) => json match {
-        case JString(ExifDateParse(x)) => x
-        case JArray(JInt(year) :: JInt(month) :: JInt(day) :: JInt(hour) ::
-         JInt(minute) :: JInt(second) :: JInt(subsec) :: _) =>
-           ExifDate(year.toInt, month.toInt, day.toInt, hour.toInt, minute.toInt, second.toInt, subsec.toInt)
-        case x => throw new MappingException("Can't convert "+x+" to ExifDate")
-      }
-    }
-
-    def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {
-      case x: ExifDate => JString(x.toString)
-    }
-  }
-
-  implicit object RatioSerializer extends Serializer[Ratio] {
-    private val RatioClass = classOf[Ratio]
-    private val RatioRegex = """^\s*(\d+)\s*/\s*(\d+)\s*$""".r
-    private val IntRegex = """^\s*(\d+)\s*$""".r
-    
-    def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Ratio] = {
-      case (TypeInfo(RatioClass, _), json) => json match {
-        case JString(RatioRegex(n,d)) => Ratio(BigInt(n), BigInt(d))
-        case JString(IntRegex(n)) => Ratio(BigInt(n))
-        case JObject(JField("n", JInt(n)) :: JField("d", JInt(d)) :: Nil) => Ratio(n, d)
-        case x => throw new MappingException("Can't convert "+x+" to Ratio")
-      }
-    }
-
-    def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {
-      case x: Ratio => JString(x.toString)
-    }
+  implicit object ImageURI extends URI[Image] {
+    def apply(in: Image) = "http://photos.williams-family.ca/photos/"+in.fileName
   }
 }

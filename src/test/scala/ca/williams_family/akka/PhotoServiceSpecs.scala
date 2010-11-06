@@ -1,5 +1,4 @@
 package ca.williams_family
-package akka
 package specs
 
 import ca.williams_family.specs.matcher._
@@ -13,40 +12,36 @@ import org.scalacheck._
 
 import scala.collection.SortedSet
 
-import se.scalablesolutions.akka.actor.{Actor,ActorRegistry,Agent}
-import Actor._
-import se.scalablesolutions.akka.dispatch.Futures._
-
 import net.liftweb.common._
 import net.liftweb.util.IoHelpers._
 import net.liftweb.util.TimeHelpers._
 
 import java.io.{File, FileFilter}
 
-import model._
+import net.fyrie.redis.RedisClient
+import net.fyrie.redis.Commands._
 
-class InMemoryPhotoService extends PhotoService
-  with InMemoryPhotoStorageFactory
-  with InMemoryPhotoTimelineIndexFactory
+import model._
 
 class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
     
   val empty = new Context {
     before {
-      Photo.service = actorOf[InMemoryPhotoService]
+      redisClient send flushdb
     }
     after {
-      Photo.stopService
+      redisClient send flushdb
     }
   }
 
   val full = new Context {
     before {
-      Photo.service = actorOf[InMemoryPhotoService]
-      (1 to 1000).foreach(i => genPhoto.sample.foreach(Photo.set))
+      redisClient send flushdb
+      (1 to 1000).foreach(i => genPhoto.sample.foreach(Photo.save))
+      assert(Photo.count == 1000)
     }
     after {
-      Photo.stopService
+      redisClient send flushdb
     }
   }
 
@@ -64,32 +59,34 @@ class PhotoServiceSpec extends Specification with ScalaCheck with BoxMatchers {
   
   "photo storage" ->- empty should {
     "have no photos stored" in {
-      Photo.count must beFull.which(_ must_== 0)
+      Photo.count must_== 0
     }
     "insert photos" in {
-      val counter = Agent(0)
       Prop.forAll{p: Photo =>
-        counter(_ + 1)
-        Photo.set(p)
-        Photo.get(p.id) must beFull.which{_ must_== p}
+        Photo.save(p)
+        val res = Photo.find(p.id)
+        res must beSome.which{_ must_== p}
         true
-      } must pass (display(workers->4, wrkSize->20))
-      Photo.count must beFull.which(_ must_== counter())
-      counter.close
+      } must pass (display(workers->10, wrkSize->10))
+      Photo.count must be_>=(100)
+    }
+  }
+
+  "full photo storage" ->- full should {
+    "handle photo not found" in {
+      val res = Photo.find("this is a missing photo id")
+      res must beEmpty
     }
   }
 
   "photo timeline" ->- full should {
     "return ids of inserted photos" in {
       Prop.forAll{p: Photo =>
-        Photo.set(p)
-        val date = p.createDate.toList.take(3)
-        Photo.timeline(date) must beFull.which(_(p.id))
-        Photo.timeline(List(date.head, date.tail.head)) must beFull.which(_(p.id))
-        Photo.timeline(List(date.head)) must beFull.which(_(p.id))
-        true
-      } must pass (display(workers->4, wrkSize->20))
-      Photo.count must_== Photo.timeline().map(_.size)
+        Photo.save(p)
+        val year = p.createDate.getYear
+        val month = p.createDate.getMonthOfYear
+        Photo.findAllByMonth(year, month).contains(p)
+      } must pass (display(workers->10, wrkSize->10))
     }
   }
 }

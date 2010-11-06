@@ -2,34 +2,35 @@ package ca.williams_family
 package lib
 
 import model._
-import serialize._
 
 import net.liftweb._
 import http._
 import rest._
 import common._
 import Box._
-import json._
+import json.{Extraction, JsonAST}
 import JsonAST._
 import util.Helpers._
 
 object RestServices extends RestHelper {
 
+  override protected def formats = model.jsonFormat
+
   serve {
     case JsonGet("photos" :: photoId :: Nil, _) => getPhoto(photoId)
     //case Put("api" :: "photos" :: Nil, json) => postPhoto(json)
 
-    case req @ JsonGet("timeline" :: TimelineDate(date), _) => getTimeline(date, req.param("after").getOrElse(""))
+//    case req @ JsonGet("timeline" :: TimelineDate(date), _) => getTimeline(date, req.param("after").getOrElse(""))
   }
 
-  def getTimeline(date: List[Int], after: String): Box[JValue] =
+/*  def getTimeline(date: List[Int], after: String): Box[JValue] =
     for {
       res <- Photo.timeline(date)
     } yield { JArray(res.dropWhile(_ <= after).take(1000).map(JString).toList) }
 
   object TimelineDate {
     def unapply(in: List[String]): Option[List[Int]] = tryo(in.map(_.toInt))
-  }
+  }*/
 
 
 /*  def postPhoto(req: Req): Box[LiftResponse] = 
@@ -44,7 +45,7 @@ object RestServices extends RestHelper {
 
   def getPhoto(photoId: String): Box[JValue] =
     for {
-      photo <- Photo.get(photoId) ?~ "Photo not found" ~> 404
-    } yield photo.toJson
+      photo <- Photo.find(photoId) ?~ "Photo not found" ~> 404
+    } yield Extraction.decompose(photo)
 
 }

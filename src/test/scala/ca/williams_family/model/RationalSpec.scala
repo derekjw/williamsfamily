@@ -20,8 +20,6 @@ import Serialization.{read, write => swrite}
 
 class RatioSpec extends Specification with ScalaCheck with BoxMatchers {
 
-  implicit val formats = Serialization.formats(NoTypeHints) + serialize.RatioSerializer
-
   "Serializing to JSON" should {
     "whole numbers" in {
       swrite(Ratio(32)) must_==("\"32\"")
