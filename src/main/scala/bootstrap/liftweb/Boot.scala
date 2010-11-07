@@ -38,9 +38,6 @@ class Boot extends Logger {
     statelessDispatchTable.append(RestServices)
     AjaxDispatch.init()
 
-//    loggedInTest = Full(() => User.loggedIn_?)
-
-    // where to search snippet
     addToPackages("ca.williams_family")
 
     info("Photo count: "+Photo.count)
@@ -81,5 +78,4 @@ class Boot extends Logger {
       GlobalRedisClient.shutdownWorkarounds
     }
   }
-
 }
