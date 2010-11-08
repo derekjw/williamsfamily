@@ -54,12 +54,6 @@ class Boot extends Logger {
     statefulRewrite.prepend {
       case
         RewriteRequest(
-          ParsePath("timeline" :: year :: month :: Nil, _, _, _), _, _) =>
-        RewriteResponse(
-          ParsePath("timeline-photos" :: Nil, "html", false, false),
-          Map("year" -> year, "month" -> month))
-      case
-        RewriteRequest(
           ParsePath("photos" :: id :: Nil, _, _, _), _, _) =>
         RewriteResponse(
           ParsePath("photo" :: Nil, "html", false, false),
@@ -71,9 +65,7 @@ class Boot extends Logger {
       Menu("Home") / "index",
       Menu("Location") / "location" >> Hidden,
       Menu("Photo") / "photo" >> Hidden,
-      Menu("Photos") / "timeline",
-      Menu("Timeline Photos") / "timeline-photos" >> Hidden,
-      Menu("cross site receiver") / "xd_receiver" >> Hidden)
+      Menu(Timeline))
     
     setSiteMap(entries)
 
