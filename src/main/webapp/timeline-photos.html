@@ -1,18 +1,16 @@
-<lift:surround with="default" at="content">
-<head>
-<script src="/javascript/jquery.createdomnodes-v1.1.js" />
-<script src="/javascript/jquery.fit.js" />
-<script src="/javascript/photo-overlay.js" />
-</head>
-<fieldset class='thumbnails'>
-<ul>
-<lift:timeline.photos>
-<li class='photo' t:id='id'>
-<a class='thumb' t:href='/'>
-<img class='thumb' alt='' t:src='/' />
-</a>
-</li>
-</lift:timeline.photos>
-</ul>
-</fieldset>
-</lift:surround>
+<div class="lift:surround?with=default;at=content">
+  <head>
+    <script src="/javascript/jquery.createdomnodes-v1.1.js" />
+    <script src="/javascript/jquery.fit.js" />
+    <script src="/javascript/photo-overlay.js" />
+  </head>
+  <fieldset class="thumbnails">
+    <ul class="lift:timeline.photos">
+      <li class="photo" id="photo">
+        <a class="thumb" href="/">
+          <img alt='' src="thumb" />
+        </a>
+      </li>
+    </ul>
+  </fieldset>
+</div>

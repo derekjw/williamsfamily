@@ -3,11 +3,10 @@ package snippet
 
 import scala.xml._
 import ca.williams_family.model._
-import net.liftweb._
-import common._
-import Box._
-import util.Helpers._
-import http.S
+import net.liftweb.common._
+import net.liftweb.util._
+import Helpers._
+import net.liftweb.http.S
 
 import ca.williams_family.model._
 
@@ -19,37 +18,25 @@ object Timeline {
 }
 
 class Timeline {
-  def list(xhtml: NodeSeq): NodeSeq =
-    Photo.timelineMonths.groupBy(_._1).toSeq.sortBy(_._1).reverse.flatMap{ case (year, months) =>
-      bind("y", xhtml,
-           "year" -> Text(year.toString),
-           AttrBindParam("href", Text("/timeline/"+year), "href"),
-           "months" -> months.flatMap(month =>
-             bind("m", chooseTemplate("y", "months", xhtml),
-                  "month" -> Text(Timeline.monthNames(month._2)),
-                  AttrBindParam("href", Text("/timeline/"+year+"/"+month._2), "href")))) }
+  def yearNode(year: Int) =
+    <h4 id={"year-%04d" format year}>{year}</h4>
   
-  def photos(xhtml: NodeSeq): NodeSeq =
-    for {
-      year <- S.param("year").flatMap(asInt)
-      month <- S.param("month").flatMap(asInt)
-    } yield {
-      for {
-        photo <- Photo.findAllByMonth(year,month)
-        thumb <- photo.images.get("thumbnail")
-      } yield {
-        bind("t", xhtml,
-             AttrBindParam("id", Text(photo.id), "id"),
-             AttrBindParam("href", Text(uri(photo)), "href"),
-             AttrBindParam("src", Text(uri(thumb)), "src"))
-      }
-    }.flatten
+  def monthNode(year: Int, month: Int) =
+    <a id={"month-%04d-%02d" format (year,month)} href={"/timeline/"+year+"/"+month}>{Timeline.monthNames(month)}</a>
 
-
-  implicit def boxToNodeSeq(in: Box[Seq[Node]]): NodeSeq = in match {
-    case Full(n) => n
-    case Failure(m,_,_) => Text(m)
-    case Empty => Text("")
-  }
+  def list =
+    ".year *" #> Photo.timelineMonths.groupBy(_._1).toSeq.sortBy(_._1).reverse.map{
+      case (year, months) =>
+        ("#year" #> yearNode(year)) &
+        (".month *" #> months.map(_._2).map(month => "#month" #> monthNode(year, month)))}
+  
+  def photos =
+    ".photo" #> S.param("year").flatMap(asInt).toList.flatMap(year =>
+      S.param("month").flatMap(asInt).toList.flatMap(month =>
+        Photo.findAllByMonth(year, month).flatMap(photo =>
+          photo.images.get("thumbnail").map(thumb =>
+            ".photo [id]" #> photo.id &
+            ".thumb [href]" #> uri(photo) &
+            "src=thumb" #> <img src={uri(thumb)}/>))))
 
 }

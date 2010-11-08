@@ -33,6 +33,10 @@ class Boot extends Logger {
       case _ => Full(DocType.html5)
     }
 
+    useXhtmlMimeType = false
+
+    calculateXmlHeader = {(_,_,_) => ""}
+
     jsArtifacts = JQuery14Artifacts
 
     statelessDispatchTable.append(RestServices)
