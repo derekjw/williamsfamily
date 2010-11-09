@@ -73,13 +73,16 @@ object Timeline extends Loc[TimelineLoc] {
         (RewriteResponse("timeline" :: Nil), TimelineMonth(year, month))
     })
 
+  override def calcTemplate =
+    Full(<fieldset class="timeline lift:surround?with=default;at=content"><div class="lift:timeline" /></fieldset>)
+
   def showIndex: NodeSeq => NodeSeq = { in =>
     <ul>{
       Photo.timelineMonths.groupBy(_._1).toSeq.sortBy(_._1).reverse.map{
         case (year, months) =>
-          <li class="year"><h4 id={"year-%04d" format year}>{year}</h4><ul>{
-            months.map(_._2).map(month =>
-              <li class="month"><a id={"month-%04d-%02d" format (year,month)} href={"/timeline/"+year+"/"+month}>{monthNames(month)}</a></li>)
+          <li class="year"><h4>{year}</h4><ul>{
+            months.map(m => TimelineMonth(year, m._2)).map(m =>
+              <li class="month"><a href={createLink(m)}>{linkText(m)}</a></li>)
           }</ul></li>
       }
     }</ul>
