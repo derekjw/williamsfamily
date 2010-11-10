@@ -17,7 +17,7 @@ class WilliamsFamilyProject(info: ProjectInfo) extends DefaultWebProject(info) w
 
   val logback = "ch.qos.logback" % "logback-classic" % "0.9.26"
   
-  val specs = "org.scala-tools.testing" %% "specs" % "1.6.5" % "test"
+  val specs = "org.scala-tools.testing" %% "specs" % "1.6.6" % "test"
   val scalacheck = "org.scala-tools.testing" % "scalacheck_2.8.0" % "1.7" % "test"
   val jetty6 = "org.mortbay.jetty" % "jetty" % "6.1.23" % "test"
   val servlet = "javax.servlet" % "servlet-api" % "2.5" % "provided"

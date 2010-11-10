@@ -65,7 +65,9 @@ class Boot extends Logger {
       Menu("Home") / "index",
       Menu("Location") / "location" >> Hidden,
       Menu("Photo") / "photo" >> Hidden,
-      Menu(Timeline))
+      Menu(Timeline),
+      Menu(TimelineYear),
+      Menu(TimelineMonth))
     
     setSiteMap(entries)
 

@@ -11,54 +11,67 @@ import Loc._
 
 import model._
 
-import scala.xml.{Text, NodeSeq}
-
-sealed trait TimelineLoc
-
-case object TimelineIndex extends TimelineLoc
-
-//case class TimelineYear(year: Int) extends TimelineLoc
-
-case class TimelineMonth(year: Int, month: Int) extends TimelineLoc
+import scala.xml.{Text, NodeSeq, Node}
 
 object AsInt {
   def unapply(in: String): Option[Int] = asInt(in)
 }
 
-object Timeline extends Loc[TimelineLoc] {
+object Timeline extends Loc[Unit] {
   def name = "timeline"
 
-  def defaultValue = Full(TimelineIndex)
+  def defaultValue = Full(())
 
   def params = Nil
 
   override val snippets: SnippetTest = {
-    case ("timeline", Full(TimelineIndex)) => showIndex
-//    case ("timeline", Full(tlYear: TimelineYear)) => showYear(tlYear)
-    case ("timeline", Full(tlMonth: TimelineMonth)) => showMonth(tlMonth)
+    case ("timeline", Full(())) => showIndex
   }
 
-  val link = new Loc.Link[TimelineLoc](List("timeline"), false) {
-    override def createLink(in: TimelineLoc) = in match {
-      case TimelineIndex =>
-        Full(Text("/timeline"))
-//      case TimelineYear(year) =>
-//        Full(Text("/timeline/%04d" format year))
-      case TimelineMonth(year, month) =>
-        Full(Text("/timeline/%04d/%02d" format (year,month)))
+  val link = new Loc.Link[Unit](List("timeline"), false)
+
+  val text: Loc.LinkText[Unit] = "Photos"
+
+  override def supplimentalKidMenuItems: List[MenuItem] =
+    Photo.timelineMonths.groupBy(_._1).mapValues(_.map(_._2)).toList.sortBy(_._1).reverse.map{
+      case (year, months) =>
+        MenuItem(TimelineYear.linkText(year), TimelineYear.createLink(year).get, months.map(month =>
+          MenuItem(TimelineMonth.linkText((year, month)), TimelineMonth.createLink((year, month)).get, Nil, false, false, Nil)),false, false, Nil)
     }
+
+  override val calcTemplate =
+    Full(<div class="lift:surround?with=default;at=content"><div class="lift:timeline" /></div>)
+
+  def showIndex: NodeSeq => NodeSeq = { in =>
+    <fieldset class="timeline">
+      <lift:Menu.builder level="1" expand="true" expandAll="true" />
+    </fieldset>
   }
 
-  val text = new Loc.LinkText(calcLinkText _)
+  def path: Seq[Node] = Stream(<a href={createDefaultLink}>{linkText(())}</a>)
+}
 
-  def calcLinkText(in: TimelineLoc): NodeSeq = in match {
-      case TimelineIndex =>
-        Text("Photos")
-//      case TimelineYear(year) =>
-//        Text("%04d" format year)
-      case TimelineMonth(_, month) =>
+object TimelineMonth extends Loc[(Int, Int)] {
+  def name = "timeline-month"
+
+  def defaultValue = Empty
+
+  def params = List(Hidden)
+
+  override val snippets: SnippetTest = {
+    case ("timeline-month", Full((year, month))) => showMonth(year, month)
+  }
+
+  val link = new Loc.Link[(Int, Int)](List("timeline-month"), false) {
+    override def pathList(in: (Int, Int)) = List("timeline", "%04d" format in._1, "%02d" format in._2)
+  }
+
+  override def title(in: (Int, Int)) = Text("%04d >> %s" format (in._1, monthNames(in._2)))
+
+  val text = new Loc.LinkText((_: (Int, Int)) match {
+      case (_, month) =>
         Text(monthNames(month))
-    }
+    })
 
   val monthNames = Map( 1 -> "January", 2 -> "February", 3 -> "March",
                         4 -> "April", 5 -> "May", 6 -> "June", 7 -> "July",
@@ -66,38 +79,63 @@ object Timeline extends Loc[TimelineLoc] {
                         11 -> "November", 12 -> "December" )
 
   override val rewrite: LocRewrite =
-    Full(NamedPF("Timeline Rewrite") {
-//      case RewriteRequest(ParsePath("timeline" :: AsInt(year) :: Nil, _, _, _), _, _) =>
-//        (RewriteResponse("timeline" :: Nil), TimelineYear(year))
+    Full(NamedPF("Timeline Month Rewrite") {
       case RewriteRequest(ParsePath("timeline" :: AsInt(year) :: AsInt(month) :: Nil, _, _, _), _, _) =>
-        (RewriteResponse("timeline" :: Nil), TimelineMonth(year, month))
+        (RewriteResponse("timeline-month" :: Nil), (year, month))
     })
 
-  override def calcTemplate =
-    Full(<fieldset class="timeline lift:surround?with=default;at=content"><div class="lift:timeline" /></fieldset>)
+  override val calcTemplate =
+    Full(<div class="lift:surround?with=default;at=content"><div class="lift:timeline-month" /></div>)
 
-  def showIndex: NodeSeq => NodeSeq = { in =>
-    <ul>{
-      Photo.timelineMonths.groupBy(_._1).toSeq.sortBy(_._1).reverse.map{
-        case (year, months) =>
-          <li class="year"><h4>{year}</h4><ul>{
-            months.map(m => TimelineMonth(year, m._2)).map(m =>
-              <li class="month"><a href={createLink(m)}>{linkText(m)}</a></li>)
-          }</ul></li>
-      }
-    }</ul>
-  }
-
-  def showMonth(tlMonth: TimelineMonth): NodeSeq => NodeSeq = { in =>
+  def showMonth(year: Int, month: Int): NodeSeq => NodeSeq = { in =>
     <head>
       <script src="/javascript/jquery.createdomnodes-v1.1.js" />
       <script src="/javascript/jquery.fit.js" />
       <script src="/javascript/photo-overlay.js" />
     </head>
-    <fieldset class="thumbnails"><ul>{
-        Photo.findAllByMonth(tlMonth.year, tlMonth.month).flatMap(photo =>
+    <fieldset class="thumbnails"><h4>{path((year, month))}</h4><ul>{
+        Photo.findAllByMonth(year, month).flatMap(photo =>
           photo.images.get("thumbnail").map(thumb =>
-            <li class="photo" id={photo.id}><a class="thumb" href={uri(photo)}><img alt='' src={uri(thumb)} /></a></li>))
+            <li class="photo" id={photo.id}><a class="thumb" href={uri(photo)}><img alt="" src={uri(thumb)} /></a></li>))
       }</ul></fieldset>
   }
+
+  def path(in: (Int, Int), sep: NodeSeq = Text(" / ")): NodeSeq = TimelineYear.path(in._1, sep) ++ sep ++ <a href={createLink(in)}>{linkText(in)}</a>
+}
+
+object TimelineYear extends Loc[Int] {
+  def name = "timeline-year"
+
+  def defaultValue = Empty
+
+  def params = List(Hidden)
+
+  override val snippets: SnippetTest = {
+    case ("timeline-year", Full(year)) => showYear(year)
+  }
+
+  val link = new Loc.Link[Int](List("timeline-year"), false) {
+    override def createLink(in: Int) = in match {
+      case year =>
+        Full(Text("/timeline/%04d" format year))
+    }
+  }
+
+  val text = new Loc.LinkText((_: Int) match {
+      case year =>
+        Text(year.toString)
+    })
+
+  override val rewrite: LocRewrite =
+    Full(NamedPF("Timeline Year Rewrite") {
+      case RewriteRequest(ParsePath("timeline" :: AsInt(year) :: Nil, _, _, _), _, _) =>
+        (RewriteResponse("timeline-year" :: Nil), year)
+    })
+
+  override val calcTemplate =
+    Full(<div class="lift:surround?with=default;at=content"><div class="lift:timeline-year" /></div>)
+
+  def showYear(year: Int): NodeSeq => NodeSeq = { in => in }
+
+  def path(in: Int, sep: NodeSeq = Text(" / ")): Seq[Node] = Timeline.path ++ sep ++ <a href={createLink(in)}>{linkText(in)}</a>
 }
