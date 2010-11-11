@@ -51,23 +51,12 @@ class Boot extends Logger {
       Photo.save(Serialization.read[Photo](new String(readWholeFile(f), "UTF-8")))
     })*/
 
-    statefulRewrite.prepend {
-      case
-        RewriteRequest(
-          ParsePath("photos" :: id :: Nil, _, _, _), _, _) =>
-        RewriteResponse(
-          ParsePath("photo" :: Nil, "html", false, false),
-          Map("id" -> id))
-    }
-
     // Build SiteMap
     val entries = SiteMap(
       Menu("Home") / "index",
       Menu("Location") / "location" >> Hidden,
-      Menu("Photo") / "photo" >> Hidden,
-      Menu(Timeline),
-      Menu(TimelineYear),
-      Menu(TimelineMonth))
+      Menu.param[Photo]("Photo", "Photo", Photo find _, _.id) / "photo" >> Hidden,
+      Menu(Timeline, Menu(TimelineYear, Menu(TimelineMonth))))
     
     setSiteMap(entries)
 
