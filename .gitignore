@@ -1,6 +1,11 @@
+.DS_Store
+.ensime
 lib_managed
-target
+src_managed
 project/boot
+project/plugins/project
+project/plugins/src_managed
+target
 *.props
 log/
 output/
