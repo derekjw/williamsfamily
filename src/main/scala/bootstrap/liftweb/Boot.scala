@@ -33,14 +33,15 @@ class Boot extends Logger {
       case _ => Full(DocType.html5)
     }
 
+    useXhtmlMimeType = false
+
+    calculateXmlHeader = {(_,_,_) => ""}
+
     jsArtifacts = JQuery14Artifacts
 
     statelessDispatchTable.append(RestServices)
     AjaxDispatch.init()
 
-//    loggedInTest = Full(() => User.loggedIn_?)
-
-    // where to search snippet
     addToPackages("ca.williams_family")
 
     info("Photo count: "+Photo.count)
@@ -50,29 +51,12 @@ class Boot extends Logger {
       Photo.save(Serialization.read[Photo](new String(readWholeFile(f), "UTF-8")))
     })*/
 
-    statefulRewrite.prepend {
-      case
-        RewriteRequest(
-          ParsePath("timeline" :: year :: month :: Nil, _, _, _), _, _) =>
-        RewriteResponse(
-          ParsePath("timeline-photos" :: Nil, "html", false, false),
-          Map("year" -> year, "month" -> month))
-      case
-        RewriteRequest(
-          ParsePath("photos" :: id :: Nil, _, _, _), _, _) =>
-        RewriteResponse(
-          ParsePath("photo" :: Nil, "html", false, false),
-          Map("id" -> id))
-    }
-
     // Build SiteMap
     val entries = SiteMap(
       Menu("Home") / "index",
       Menu("Location") / "location" >> Hidden,
-      Menu("Photo") / "photo" >> Hidden,
-      Menu("Photos") / "timeline",
-      Menu("Timeline Photos") / "timeline-photos" >> Hidden,
-      Menu("cross site receiver") / "xd_receiver" >> Hidden)
+      Menu.param[Photo]("Photo", "Photo", Photo find _, _.id) / "photo" >> Hidden,
+      Menu(Timeline, Menu(TimelineYear, Menu(TimelineMonth))))
     
     setSiteMap(entries)
 
@@ -81,5 +65,4 @@ class Boot extends Logger {
       GlobalRedisClient.shutdownWorkarounds
     }
   }
-
 }

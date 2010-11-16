@@ -11,7 +11,7 @@ import se.scalablesolutions.akka.dispatch.Future
 
 object GlobalRedisClient extends RedisClient
 object SessionRedisClient extends SessionVar[RedisClient](new RedisClient) {
-  registerCleanupFunc(session => this.disconnect)
+  registerGlobalCleanupFunc(s => this.disconnect)
 }
 
 abstract class RedisMeta[A: Parse: Manifest] {

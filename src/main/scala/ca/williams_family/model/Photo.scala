@@ -59,7 +59,7 @@ trait URI[A] {
 
 object URI {
   implicit object PhotoURI extends URI[Photo] {
-    def apply(in: Photo) = "/photos/"+in.id
+    def apply(in: Photo) = "/photo/"+in.id
   }
 
   implicit object ImageURI extends URI[Image] {

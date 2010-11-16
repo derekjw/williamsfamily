@@ -11,7 +11,7 @@ package object model {
 
   import org.joda.time.{LocalDateTime, DateTimeZone}
 
-  implicit def redisClient: RedisClient = if (S.inStatefulScope_?) SessionRedisClient else GlobalRedisClient
+  implicit def redisClient: RedisClient = GlobalRedisClient //if (S.inStatefulScope_?) SessionRedisClient else GlobalRedisClient
 
   implicit val jsonFormat = DefaultFormats + RatioSerializer + LocalDateTimeSerializer
 
